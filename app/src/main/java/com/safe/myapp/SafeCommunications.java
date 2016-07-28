@@ -1,21 +1,10 @@
 package com.safe.myapp;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.net.Uri;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Environment;
 import android.util.Log;
-import android.util.LruCache;
-import android.widget.Toast;
-
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.ImageLoader;
-import com.android.volley.toolbox.StringRequest;
-
 import java.io.BufferedInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -66,7 +55,7 @@ public class SafeCommunications {
 
         try {
             synchronized (out) {
-                logger.write("handshaking");
+                logger.write("Handshaking");
                 // notify the server we are going to send a handshake
                 out.writeInt(SafeService.HANDSHAKE);
                 // notify of size
@@ -89,7 +78,6 @@ public class SafeCommunications {
                     out.writeInt(SafeService.MESSAGE);
                     // notify server of the size of the message
                     out.writeInt(message.getBytes().length);
-                    out.flush();
 
                     // convert message to bytes and send
                     byte[] messageBytes = message.getBytes();

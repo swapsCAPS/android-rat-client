@@ -104,7 +104,7 @@ public class SafeAudio {
         try {
             tmpRecorder.prepare();
             tmpRecorder.start();
-        } catch (IllegalStateException | IOException e) {
+        } catch (RuntimeException | IOException e) {
             e.printStackTrace();
             logger.write(Log.getStackTraceString(e));
             available = false;

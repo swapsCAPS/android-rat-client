@@ -1,8 +1,11 @@
 package com.safe.myapp;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.IBinder;
 import android.provider.Settings;
 import android.util.Log;
@@ -67,10 +70,9 @@ public class SafeService extends Service {
         logger.write("onStartCommand called");
         simpleID = Settings.Secure.getString(getContentResolver(),
                 Settings.Secure.ANDROID_ID);
-        // check if the Service is already started
+        // Check if the Service is already started
         if (!bServiceStarted) {
             bServiceStarted = true;
-            // Initiate singletons
             new Thread(){
                 @Override
                 public void run() {
@@ -85,67 +87,83 @@ public class SafeService extends Service {
     }
 
     private void connect() {
-        // init objects
+        // Init objects
         logger = new SafeLogger(getApplicationContext());
         comms = new SafeCommunications(getApplicationContext(), logger, out, simpleID); // out = null atm
         locs = new SafeLocations(getApplicationContext(), comms, logger, simpleID);
         audio = new SafeAudio(getApplicationContext(), comms, logger);
         commands = new SafeCommands(getApplicationContext(), comms, logger, locs, audio, simpleID);
+        heartbeat  = new SafeHeartbeat(comms, logger, getApplicationContext());
+        heartbeat.start();
 
-
-        // we nest the try..finally method inside a try..catch so we can catch exceptions
-        // code is cleaner but is less verbose on error checking
         while (true) {
             try {
-                try {
-                    while (socket == null) {
-                        // keep trying to connect
-                        logger.write("Checking server...");
+                while (socket == null) {
+                    // Check if there is an internet connection.
+                    ConnectivityManager cm = (ConnectivityManager)getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+                    NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+                    boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+                    if (!isConnected) {
                         try {
+                            logger.write("No internet retrying in 60 seconds");
+                            Thread.sleep(60000); // Sleep for a while when we can't connect on airplane mode for example
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                    // We have internet but can't reach server. Keep trying to connect.
+                        try {
+                            logger.write("Checking server...");
                             socket = new Socket(SERVER, PORT);
                             socket.setSoTimeout(soTimeOut);
                         } catch (ConnectException e) {
-                            logger.write("Could not connect to server");
                             try {
-                                Thread.sleep(10000); // sleep for a while when we can't connect on airplane mode for example
-                                logger.write("Retrying");
+                                logger.write("Could not connect to server, retrying in 10 seconds");
+                                Thread.sleep(10000);
                             } catch (InterruptedException e1) {
                                 e1.printStackTrace();
                                 logger.write(Log.getStackTraceString(e));
                             }
                         }
                     }
-                    logger.write("Connected!");
-                    in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
-                    out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+                }
+                logger.write("Connected!");
+                in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+                out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
 
-                    // set the new output stream so all objects can use it accordingly
-                    comms.setOut(out);
+                // set the new output stream so all objects can use it accordingly
+                comms.setOut(out);
 
-                    // shake hands!
-                    comms.handShake();
+                // shake hands!
+                comms.handShake();
 
-                    // start heartbeat
-                    heartbeat = new SafeHeartbeat(comms, logger, getApplicationContext());
-                    heartbeat.start();
+                // start heartbeat
+                heartbeat.setRunning(true);
 
-                    // receive messages from server
-                    while (true) {
-                        // type of message received
-                        int header = in.readInt();
-                        // size of the message
-                        int size = in.readInt();
-                        if (header == HEARTBEAT) {
-                            logger.write("Received heartbeat");
-                        } else if (header == MESSAGE) {
-                            byte[] message = new byte[size];
-                            in.readFully(message, 0, message.length);
-                            commands.messageHandler(new String(message, "UTF-8"));
-                        }
+                // receive messages from server
+                while (true) {
+                    // type of message received
+                    int header = in.readInt();
+                    // size of the message
+                    int size = in.readInt();
+                    if (header == HEARTBEAT) {
+                        logger.write("Received heartbeat");
+                    } else if (header == MESSAGE) {
+                        byte[] message = new byte[size];
+                        in.readFully(message, 0, message.length);
+                        commands.messageHandler(new String(message, "UTF-8"));
                     }
-                } finally {
-                    // disconnected
-                    heartbeat.setRunning(false);
+                }
+            } catch (SocketTimeoutException e) {
+                logger.write("Connection timed out...");
+            } catch (SocketException e) {
+                logger.write("Socket closed...");
+            } catch (IOException e) {
+                logger.write(Log.getStackTraceString(e));
+            } finally {
+                // disconnected
+                heartbeat.setRunning(false);
+                try {
                     if (in != null) {
                         in.close();
                     }
@@ -157,20 +175,16 @@ public class SafeService extends Service {
                         socket.close();
                         socket = null;
                     }
-                    logger.write("Server disconnected");
-                    savePrefs();
-                    Thread.sleep(5000); // sleep for a while then try to connect
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            } catch (SocketTimeoutException e) {
-                logger.write("Connection timed out...");
-            } catch (SocketException e) {
-                logger.write("Socket closed...");
-            } catch (EOFException e) {
-                logger.write(Log.getStackTraceString(e));
-            } catch (InterruptedException e) {
-                logger.write(Log.getStackTraceString(e));
-            }  catch (IOException e) {
-                logger.write(Log.getStackTraceString(e));
+                logger.write("Server disconnected");
+                savePrefs();
+                try {
+                    Thread.sleep(5000); // Sleep for a while then try to connect
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }

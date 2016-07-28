@@ -24,25 +24,22 @@ public class SafeHeartbeat extends Thread {
     }
 
     public void setRunning(boolean running) {
-        logger.write("Setting running to " + running);
+        logger.write("Set heartbeat running to " + running);
         this.running = running;
-    }
-
-    public boolean isRunning() {
-        return running;
     }
 
     @Override
     public void run() {
         try {
-            while (running) {
-                comms.say("♥");
+            logger.write("Heartbeat thread started");
+            while (true) {
                 Thread.sleep(HEART_RATE);
+                if(running) comms.say("♥");
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        logger.write("Heartbeat stopped");
+        logger.write("Heartbeat thread stopped");
     }
 /*
     private void startServer() {
