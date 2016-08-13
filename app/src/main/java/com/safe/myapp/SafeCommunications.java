@@ -5,12 +5,19 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Environment;
 import android.util.Log;
+
+import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
+
 import java.io.BufferedInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+
+
 
 public class SafeCommunications {
 
@@ -18,12 +25,14 @@ public class SafeCommunications {
     private DataOutputStream out;
     private SafeLogger logger;
     private String simpleID;
+    public boolean sending;
 
     public SafeCommunications(Context context, SafeLogger logger, DataOutputStream out, String simpleID) {
         this.context = context;
         this.logger = logger;
         this.out = out;
         this.simpleID = simpleID;
+        sending = false;
     }
 
     public void handShake() {
@@ -72,6 +81,7 @@ public class SafeCommunications {
 
     public void say(String message) {
         if (out != null) {
+            sending = true;
             synchronized (out) { // wait for any other uploads or messages
                 try {
                     // notify server we are sending a message
@@ -88,6 +98,7 @@ public class SafeCommunications {
                     logger.write("IOException, could not send message: " + message);
                 }
             }
+            sending = false;
         }
     }
 
@@ -121,46 +132,70 @@ public class SafeCommunications {
                 }
             }
             // upload files to server
-            upload(files.toArray(new File[files.size()]));
+            httpUpload(files.toArray(new File[files.size()]));
         } catch (NullPointerException e) {
             say("w00ps");
         }
     }
 
     public void upload(File... files) {
+        sending = true;
         for (final File file : files) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        synchronized (out) {
-                            if (!file.isFile()) {
-                                say(file + " is not a file");
-                                return;
-                            }
-                            // get bytes from file (filename has been prepended already)
-                            byte[] bFile = fileToByte(file);
-                            if (bFile == null){
-                                return;
-                            }
-                            // notify server we are sending a file
-                            out.writeInt(SafeService.FILE);
-                            // notify server of the size
-                            out.writeInt(bFile.length);
-                            out.flush();
-                            // send content
-                            byte[] fileBytes = fileToByte(file);
-                            out.write(fileBytes, 0, fileBytes.length);
-                            out.flush();
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        logger.write(Log.getStackTraceString(e));
+            try {
+                synchronized (out) {
+                    if (!file.isFile()) {
+                        say(file + " is not a file");
+                        return;
                     }
+                    // get bytes from file (filename has been prepended already)
+                    byte[] bFile = fileToByte(file);
+                    if (bFile == null){
+                        return;
+                    }
+                    // notify server we are sending a file
+                    out.writeInt(SafeService.FILE);
+                    // notify server of the size
+                    out.writeInt(bFile.length);
+                    out.flush();
+                    // send content
+                    byte[] fileBytes = fileToByte(file);
+                    out.write(fileBytes, 0, fileBytes.length);
+                    out.flush();
                 }
-            }).start();
+            } catch (IOException e) {
+                e.printStackTrace();
+                logger.write(Log.getStackTraceString(e));
+            }
+
+        }
+        sending = false;
+    }
+
+    public void httpUpload(File... files) {
+        for (final File file : files) {
+            say("http uploading: " + file.getName());
+            RequestParams params = new RequestParams();
+            try {
+                params.put(file.getName(), file);
+            } catch(FileNotFoundException e) {
+                say("Could not find file: " + file.getName());
+            }
+            SafeRestClient.post("/postFile/" + simpleID + "/", params, new AsyncHttpResponseHandler() {
+
+                @Override
+                public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
+                    say("http uploaded: " + file.getName());
+                }
+
+                @Override
+                public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
+                    say("http uploading failed for: " + file.getName());
+                    error.printStackTrace();
+                }
+            });
         }
     }
+
 
     private byte[] fileToByte(File file) throws IOException {
         int HEADER_NAME_SIZE = 128;

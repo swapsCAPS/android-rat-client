@@ -6,10 +6,15 @@ import android.content.Intent;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.location.LocationProvider;
+import android.os.Bundle;
 import android.util.Log;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -22,11 +27,13 @@ public class SafeLocations {
     private static final String STR_EXT_KML = ".kml";
     private static SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss_z", Locale.US);
 
+    private static LocationManager locationManager;
+    private static LocationListener listener;
     public static Location lastLocation = null;
     public static ArrayList<Location> locationList = new ArrayList<Location>();
+
     public static SafeCommunications comms;
     public static SafeLogger logger;
-
     private Context context;
     private String simpleID;
 
@@ -35,6 +42,8 @@ public class SafeLocations {
         this.comms = comms;
         this.logger = logger;
         this.simpleID = simpleID;
+        locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        listener = new MyLocationListener();
     }
 
     public void startLocations() {
@@ -62,6 +71,10 @@ public class SafeLocations {
         } else {
             comms.say("Location service was not started");
         }
+    }
+
+    public void getSingleLocation() {
+        locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, listener, context.getMainLooper());
     }
 
     public String getLastKnownAddress() {
@@ -224,5 +237,71 @@ public class SafeLocations {
 
     public static void setLastLocation(Location lastLocation) {
         SafeLocations.lastLocation = lastLocation;
+    }
+
+    public class MyLocationListener implements LocationListener {
+        Geocoder gcd;
+        StringBuilder locString;
+        List<Address> addresses;
+
+        int previousStatus = -1;
+
+        public void onLocationChanged(final Location loc) {
+            // Add every reported location to the array, we can then iterate through to create the kml path
+            locationList.add(loc);
+            // Create a message for the server containing coords and a human readable address
+            locString = new StringBuilder();
+            locString.append("lat ")
+                    .append(loc.getLatitude())
+                    .append(" lng ")
+                    .append(loc.getLongitude())
+                    .append(" ")
+                    .append(loc.getProvider());
+            gcd = new Geocoder(context.getApplicationContext(),
+                    Locale.getDefault());
+            // Retrieve human readable stuff from coords
+            try {
+                addresses = gcd.getFromLocation(
+                        loc.getLatitude(),
+                        loc.getLongitude(), 1);
+                locString.append(" ").append(addresses.get(0).getLocality());
+                locString.append(" ").append(addresses.get(0).getPostalCode());
+                locString.append(" ").append(addresses.get(0).getThoroughfare());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            comms.say(locString.toString());
+            lastLocation = loc;
+        }
+
+        public void onProviderDisabled(String provider) {
+            comms.say("Location provider " + provider + " disabled by the user");
+        }
+
+        public void onProviderEnabled(String provider) {
+            comms.say("Location provider " + provider + " enabled by the user");
+        }
+
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+            String strStatus;
+            switch (status) {
+                case LocationProvider.OUT_OF_SERVICE:
+                    strStatus = "OUT_OF_SERVICE";
+                    break;
+                case LocationProvider.TEMPORARILY_UNAVAILABLE:
+                    strStatus = "TEMPORARILY_UNAVAILABLE";
+                    break;
+                case LocationProvider.AVAILABLE:
+                    strStatus = "AVAILABLE";
+                    break;
+                default:
+                    strStatus = "null";
+            }
+            // Only log if status actally changed. We are getting a lot of chatter otherwise.
+            if(status != previousStatus) {
+                previousStatus = status;
+                comms.say("LocationListener status changed to " + provider + " " + strStatus);
+            }
+        }
     }
 }

@@ -22,6 +22,9 @@ public class SafeLogger {
 
     public SafeLogger(Context context) {
         this.context = context;
+        // TOdo CHeck if external storage is available
+        // And then use it
+        // file = new File(Environment.getExternalStorageDirectory(), filename);
         file = new File(context.getFilesDir(), filename);
     }
 

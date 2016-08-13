@@ -76,17 +76,21 @@ public class SafeAudio {
 
     public void stopRecording() {
         if (mRecorder != null) {
-            mRecorder.stop();
-            mRecorder.release();
-            mRecorder = null;
-            File file = new File(context.getFilesDir(), AudioFileName);
-            comms.upload(file);
-            comms.say("Audio recording stopped");
-            SafeService.setbAudioStarted(false);
-            // release the wakelock when recording stops
-            if (wakeLock != null) {
-                wakeLock.release();
-                wakeLock = null;
+            try {
+                mRecorder.stop();
+                mRecorder.release();
+                mRecorder = null;
+                File file = new File(context.getFilesDir(), AudioFileName);
+                comms.upload(file);
+                comms.say("Audio recording stopped");
+                SafeService.setbAudioStarted(false);
+                // release the wakelock when recording stops
+                if (wakeLock != null) {
+                    wakeLock.release();
+                    wakeLock = null;
+                }
+            } catch (RuntimeException e) {
+                comms.say("Could not stop MediaRecorder (RuntimeException)");
             }
         } else {
             comms.say("Was not recording");

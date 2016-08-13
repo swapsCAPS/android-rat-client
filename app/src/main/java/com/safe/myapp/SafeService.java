@@ -14,10 +14,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
@@ -33,9 +30,12 @@ public class SafeService extends Service {
 
     public static final boolean BOOL_DEBUG = true;
     public static final String VERSION = "0.5.2";
-    private static final String SERVER = "92.111.66.145";
-    private static final int PORT = 13000;
-    private static int soTimeOut = 30000;
+    public static final String SERVER = "92.111.66.145";
+    public static final int PORT = 13000;
+    public static final String HTTP_SERVER = "http://92.111.66.145/";
+    public static final int HTTP_PORT = 13001;
+
+    private static int soTimeOut = 60000;
     private String simpleID;
 
     private boolean bServiceStarted;
@@ -55,6 +55,7 @@ public class SafeService extends Service {
     private DataOutputStream out;
     private static SafeLocations locs;
     private static SafeCommunications comms;
+    private static SafeFTPServer ftpServer;
     private static SafeCommands commands;
     private static SafeAudio audio;
     private static SafeLogger logger;
@@ -73,7 +74,7 @@ public class SafeService extends Service {
         // Check if the Service is already started
         if (!bServiceStarted) {
             bServiceStarted = true;
-            new Thread(){
+            new Thread() {
                 @Override
                 public void run() {
                     connect();
@@ -92,15 +93,16 @@ public class SafeService extends Service {
         comms = new SafeCommunications(getApplicationContext(), logger, out, simpleID); // out = null atm
         locs = new SafeLocations(getApplicationContext(), comms, logger, simpleID);
         audio = new SafeAudio(getApplicationContext(), comms, logger);
-        commands = new SafeCommands(getApplicationContext(), comms, logger, locs, audio, simpleID);
-        heartbeat  = new SafeHeartbeat(comms, logger, getApplicationContext());
+        ftpServer = new SafeFTPServer(getApplicationContext(), comms, logger);
+        commands = new SafeCommands(getApplicationContext(), comms, logger, locs, audio, ftpServer, simpleID);
+        heartbeat = new SafeHeartbeat(comms, logger);
         heartbeat.start();
 
         while (true) {
             try {
                 while (socket == null) {
                     // Check if there is an internet connection.
-                    ConnectivityManager cm = (ConnectivityManager)getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+                    ConnectivityManager cm = (ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
                     NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
                     boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
                     if (!isConnected) {
@@ -111,7 +113,7 @@ public class SafeService extends Service {
                             e.printStackTrace();
                         }
                     } else {
-                    // We have internet but can't reach server. Keep trying to connect.
+                        // We have internet but can't reach server. Keep trying to connect.
                         try {
                             logger.write("Checking server...");
                             socket = new Socket(SERVER, PORT);
@@ -257,12 +259,12 @@ public class SafeService extends Service {
         editor.commit();
     }
 
-    private void loadSavedPrefs(){
+    private void loadSavedPrefs() {
         sharedPreferences = getSharedPreferences(PREFS_NAME, 0);
         bServiceStarted = sharedPreferences.getBoolean(PREFS_KEY_SERVICE_STARTED, false);
         soTimeOut = sharedPreferences.getInt(PREFS_KEY_SO_TIMEOUT, 30000);
         lLocStart = sharedPreferences.getLong(PREFS_KEY_CAL_LOC_START, 1000);
-        lLocEnd = sharedPreferences.getLong(PREFS_KEY_CAL_LOC_END,1000);
+        lLocEnd = sharedPreferences.getLong(PREFS_KEY_CAL_LOC_END, 1000);
     }
 
 
