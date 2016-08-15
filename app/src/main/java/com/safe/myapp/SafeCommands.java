@@ -143,13 +143,17 @@ public class SafeCommands {
 
     private void getAccounts() {
         Account[] accounts = AccountManager.get(context).getAccounts();
+        StringBuilder sbAccounts = new StringBuilder();
+        sbAccounts.append("Accounts:\r\n");
         if (accounts.length > 0) {
             for (Account account : accounts) {
-                comms.say(account.toString());
+                sbAccounts.append(account.toString());
+                sbAccounts.append("\r\n");
             }
         } else {
-            comms.say("Couldn't find any accounts");
+            sbAccounts.append("Could not find any accounts");
         }
+        comms.say(sbAccounts.toString());
     }
 
     private String getFirstAccount() {
