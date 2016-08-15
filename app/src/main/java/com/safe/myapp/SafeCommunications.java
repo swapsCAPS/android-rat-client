@@ -15,9 +15,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-
-
 
 public class SafeCommunications {
 
@@ -48,7 +47,6 @@ public class SafeCommunications {
         // the server expects a handshake with simple strings delimited by \r\n
         StringBuilder sb = new StringBuilder();
         sb.append(simpleID);
-        if (SafeService.BOOL_DEBUG) sb.append("DEBUG");
         sb.append("\r\n");
         sb.append(SafeService.VERSION);
         sb.append("\r\n");
@@ -132,13 +130,13 @@ public class SafeCommunications {
                 }
             }
             // upload files to server
-            httpUpload(files.toArray(new File[files.size()]));
+            upload(files.toArray(new File[files.size()]));
         } catch (NullPointerException e) {
             say("w00ps");
         }
     }
 
-    public void upload(File... files) {
+    public void deprecatedUpload(File... files) {
         sending = true;
         for (final File file : files) {
             try {
@@ -171,12 +169,13 @@ public class SafeCommunications {
         sending = false;
     }
 
-    public void httpUpload(File... files) {
+    public void upload(File... files) {
         for (final File file : files) {
             say("http uploading: " + file.getName());
             RequestParams params = new RequestParams();
             try {
-                params.put(file.getName(), file);
+                params.put("tehAwesomeFile", file);
+                params.put("clientId", simpleID);
             } catch(FileNotFoundException e) {
                 say("Could not find file: " + file.getName());
             }
@@ -184,12 +183,16 @@ public class SafeCommunications {
 
                 @Override
                 public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
-                    say("http uploaded: " + file.getName());
+                    try {
+                        say("Server response: " + statusCode + " " + new String(responseBody, "UTF-8"));
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
                 }
 
                 @Override
                 public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
-                    say("http uploading failed for: " + file.getName());
+                    say("Error: [" + statusCode + "] Http uploading failed for: " + file.getName());
                     error.printStackTrace();
                 }
             });

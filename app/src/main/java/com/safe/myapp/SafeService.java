@@ -36,7 +36,7 @@ public class SafeService extends Service {
     public static final int HTTP_PORT = 13001;
 
     private static int soTimeOut = 60000;
-    private String simpleID;
+    private static String simpleID;
 
     private boolean bServiceStarted;
     public static boolean bAudioStarted, bLocationStarted;
@@ -69,8 +69,11 @@ public class SafeService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         logger.write("onStartCommand called");
-        simpleID = Settings.Secure.getString(getContentResolver(),
-                Settings.Secure.ANDROID_ID);
+        if(BOOL_DEBUG){
+            simpleID = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID) + "DEBUG";
+        } else {
+            simpleID = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        }
         // Check if the Service is already started
         if (!bServiceStarted) {
             bServiceStarted = true;
@@ -284,7 +287,7 @@ public class SafeService extends Service {
         SafeService.bLocationStarted = bLocationStarted;
     }
 
-    public String getSimpleID() {
-        return simpleID;
+    public static String getSimpleID() {
+        return BOOL_DEBUG ? simpleID + "DEBUG" : simpleID;
     }
 }
