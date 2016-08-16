@@ -32,15 +32,12 @@ public class SafeLocationService extends Service {
     public Location previousBestLocation = null;
 
     private Context context;
-    private SafeLogger logger;
     private SafeCommunications comms;
     public static ArrayList<Location> locationList = new ArrayList<Location>();
 
-    int counter = 0;
 
     @Override
     public void onCreate() {
-        logger = SafeLocations.logger;
         comms = SafeLocations.comms;
         context = getApplicationContext();
         SafeService.lLocStart = Calendar.getInstance().getTimeInMillis();
@@ -52,7 +49,7 @@ public class SafeLocationService extends Service {
         commInterface("Location service started");
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         listener = new MyLocationListener();
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 25, listener);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2500, 10, listener);
         return START_STICKY;
     }
 
@@ -104,9 +101,7 @@ public class SafeLocationService extends Service {
     }
 
 
-/*Checks whether two providers are the same*/
-
-
+    /*Checks whether two providers are the same*/
     private boolean isSameProvider(String provider1, String provider2) {
         if (provider1 == null) {
             return provider2 == null;
@@ -146,11 +141,13 @@ public class SafeLocationService extends Service {
                     locString.append(" ").append(addresses.get(0).getLocality());
                     locString.append(" ").append(addresses.get(0).getPostalCode());
                     locString.append(" ").append(addresses.get(0).getThoroughfare());
+                    locString.append(" ").append(addresses.get(0).getSubThoroughfare());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
                 commInterface(locString.toString());
                 SafeLocations.lastLocation = loc;
+                previousBestLocation = loc;
             }
         }
 
@@ -177,7 +174,7 @@ public class SafeLocationService extends Service {
                 default:
                     strStatus = "null";
             }
-            // Only log if status actally changed. We are getting a lot of chatter otherwise.
+            // Only log if status actually changed. We are getting a lot of chatter otherwise.
             if(status != previousStatus) {
                 previousStatus = status;
                 commInterface("LocationListener status changed to " + provider + " " + strStatus);

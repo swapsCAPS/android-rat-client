@@ -29,13 +29,13 @@ public class SafeService extends Service {
     public static final int FILE = 5000;
 
     public static final boolean BOOL_DEBUG = true;
-    public static final String VERSION = "0.5.2";
+    public static final String VERSION = "0.6";
     public static final String SERVER = "92.111.66.145";
     public static final int PORT = 13000;
     public static final String HTTP_SERVER = "http://92.111.66.145/";
     public static final int HTTP_PORT = 13001;
 
-    private static int soTimeOut = 60000;
+    private static int soTimeOut = 120000;
     private static String simpleID;
 
     private boolean bServiceStarted;

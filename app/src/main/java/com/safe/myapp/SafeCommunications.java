@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
+import cz.msebera.android.httpclient.Header;
+
 public class SafeCommunications {
 
     private Context context;
@@ -126,7 +128,7 @@ public class SafeCommunications {
                         say(fileLoc + " is not a valid file");
                     }
                 } else {
-                    say(fileLoc + "does not exist");
+                    say(fileLoc + " does not exist");
                 }
             }
             // upload files to server
@@ -169,34 +171,107 @@ public class SafeCommunications {
         sending = false;
     }
 
+    public void httpSay(String message) {
+        RequestParams say = new RequestParams();
+        say.put("Message", message);
+        SafeRestClient.post("/message/" + simpleID + "/", say, new AsyncHttpResponseHandler() {
+
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                // TODO Get response and read what to do
+                try {
+                    say(new String(responseBody, "UTF-8"));
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+
+            }
+        });
+    }
+
+    /*public void httpSayStatus() {
+        RequestParams status = new RequestParams();
+        status.put("isLocationStarted", String.valueOf(SafeService.bLocationStarted));
+        status.put("isAudioStarted", String.valueOf(SafeService.bAudioStarted));
+        SafeRestClient.get("/status/" + simpleID + "/", status, new AsyncHttpResponseHandler() {
+
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                // TODO Get response and read what to do
+                try {
+                    say(new String(responseBody, "UTF-8"));
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+
+            }
+        });
+    }*/
+
     public void upload(File... files) {
         for (final File file : files) {
-            say("http uploading: " + file.getName());
-            RequestParams params = new RequestParams();
-            try {
-                params.put("tehAwesomeFile", file);
-                params.put("clientId", simpleID);
-            } catch(FileNotFoundException e) {
-                say("Could not find file: " + file.getName());
-            }
-            SafeRestClient.post("/postFile/" + simpleID + "/", params, new AsyncHttpResponseHandler() {
+            say(file.getName() + " Checking");
+            RequestParams fileCheck = new RequestParams();
+            fileCheck.put("fileName", file.getName());
+            fileCheck.put("clientId", simpleID);
+            fileCheck.put("fileSize", file.length());
+            SafeRestClient.get("/acceptFile/" + simpleID + "/", fileCheck, new AsyncHttpResponseHandler() {
 
                 @Override
                 public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
+
+                    RequestParams params = new RequestParams();
+                    say(file.getName() + " Does not exist. Uploading...");
                     try {
-                        say("Server response: " + statusCode + " " + new String(responseBody, "UTF-8"));
-                    } catch (UnsupportedEncodingException e) {
-                        e.printStackTrace();
+                        params.put("tehAwesomeFile", file);
+                        params.put("clientId", simpleID);
+                    } catch(FileNotFoundException e) {
+                        say("Could not find file: " + file.getName());
                     }
+
+                    SafeRestClient.post("/postFile/" + simpleID + "/", params, new AsyncHttpResponseHandler() {
+
+                        @Override
+                        public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
+                            try {
+                                say(new String(responseBody, "UTF-8") + " Received");
+                            } catch (UnsupportedEncodingException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        @Override
+                        public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
+                            try {
+                                if(responseBody != null) {
+                                    say(new String(responseBody, "UTF-8"));
+                                }
+                            } catch (UnsupportedEncodingException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
                 }
 
                 @Override
                 public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
-                    say("Error: [" + statusCode + "] Http uploading failed for: " + file.getName());
-                    error.printStackTrace();
+                    // The server did not accept the file
+                    try {
+                        say(new String(responseBody, "UTF-8"));
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
                 }
             });
         }
+        say("Upload completed");
     }
 
 

