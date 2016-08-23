@@ -261,7 +261,6 @@ public class SafeLocations {
                 e.printStackTrace();
             }
             comms.say(locString.toString());
-            comms.httpSayLocation(loc);
             lastLocation = loc;
         }
 

@@ -32,7 +32,6 @@ public class SafeHeartbeat extends Thread {
                 Thread.sleep(HEART_RATE);
                 if(running == true && comms.sending == false) {
                     comms.say("♥");
-                    comms.httpSayStatus();
                 }
             }
         } catch (InterruptedException e) {

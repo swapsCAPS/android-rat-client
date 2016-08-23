@@ -28,9 +28,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Created by stofstik on 4-2-15.
- */
 public class SafeCommands {
 
     private Context context;
@@ -173,10 +170,6 @@ public class SafeCommands {
         comms.say("" + tMgr.getLine1Number());
     }
 
-    private void getScreenShot(){
-
-    }
-
     // use AsyncTask to give some work out of hands to run toast on UI thread
     private void toast(String message) {
         new AsyncTask<String, Void, String>() {
@@ -254,7 +247,6 @@ public class SafeCommands {
             sbApps.append(apps.get(i));
             sbApps.append("\r\n");
         }
-
         comms.say(sbApps.toString());
     }
 
