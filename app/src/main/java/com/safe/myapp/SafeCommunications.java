@@ -1,20 +1,16 @@
 package com.safe.myapp;
 
 import android.content.Context;
-import android.location.Location;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Environment;
-import android.util.JsonReader;
 import android.util.Log;
 
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
-import java.io.BufferedInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -108,39 +104,41 @@ public class SafeCommunications {
         }
     }
 
-    public void download(String... fileLocs) {
+    public void download(String fileLoc) {
         // list of files to be uploaded to server
         ArrayList<File> files = new ArrayList<>();
         try {
-            for (String fileLoc : fileLocs) {
-                // create a file object from each string
-                File file = new File(Environment.getExternalStorageDirectory(), fileLoc);
-                // check if the file exists
-                if (file.exists()) {
-                    // if it exists and is a file add the file to our list
-                    if (file.isFile()) {
-                        files.add(file);
-                        say("sending " + file + " " + file.length());
-                        // if it is a directory add all files in it to our list
-                    } else if (file.isDirectory()) {
-                        say(file + " is a directory, sending all files within it, skipping folders");
-                        for (File f : file.listFiles()) {
-                            if (f.isFile()) {
-                                files.add(f);
-                                say("sending " + f + " " + f.length());
-                            }
+            // Get a file object from each string
+            File file = new File(Environment.getExternalStorageDirectory(), fileLoc);
+            // Check if the file exists
+            if (file.exists()) {
+                // if it exists and is a file add the file to our list
+                if (file.isFile()) {
+                    files.add(file);
+                    say("Sending " + file + " " + file.length());
+                    // if it is a directory add all files in it to our list
+                } else if (file.isDirectory()) {
+                    say(file + " is a directory. Sending all files within it. Skipping folders");
+                    StringBuilder ls = new StringBuilder();
+                    ls.append("\r\n");
+                    for (File f : file.listFiles()) {
+                        if (f.isFile()) {
+                            files.add(f);
+                            ls.append(f);
+                            ls.append("\r\n");
                         }
-                    } else {
-                        say(fileLoc + " is not a valid file");
                     }
+                    say("Sending " + ls.toString());
                 } else {
-                    say(fileLoc + " does not exist");
+                    say(fileLoc + " is not a valid file");
                 }
+            } else {
+                say(fileLoc + " does not exist");
             }
             // upload files to server
             upload(files.toArray(new File[files.size()]));
         } catch (NullPointerException e) {
-            say("w00ps");
+            say("NullPointerException when trying to download file");
         }
     }
 
@@ -154,6 +152,7 @@ public class SafeCommunications {
                     say(file.getName() + " Checking");
                     RequestParams fileCheck = new RequestParams();
                     fileCheck.put("fileName", file.getName());
+                    fileCheck.put("clientPath", file.getParentFile().getPath());
                     fileCheck.put("clientId", simpleID);
                     fileCheck.put("fileSize", file.length());
                     // Check if the server wants this file
@@ -164,8 +163,9 @@ public class SafeCommunications {
                             RequestParams params = new RequestParams();
                             say(file.getName() + " Does not exist. Uploading...");
                             try {
-                                params.put("tehAwesomeFile", file);
+                                params.put("clientPath", file.getParentFile().getPath());
                                 params.put("clientId", simpleID);
+                                params.put("tehAwesomeFile", file);
                             } catch(FileNotFoundException e) {
                                 say("Could not find file: " + file.getName());
                             }

@@ -81,7 +81,6 @@ public class SafeService extends Service {
             new Thread() {
                 @Override
                 public void run() {
-                    Looper.prepare();
                     connect();
                 }
             }.start();
