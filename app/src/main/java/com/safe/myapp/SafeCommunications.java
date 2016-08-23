@@ -144,39 +144,59 @@ public class SafeCommunications {
         }
     }
 
-    public void upload(File... files) {
-        for (final File file : files) {
-            say(file.getName() + " Checking");
-            RequestParams fileCheck = new RequestParams();
-            fileCheck.put("fileName", file.getName());
-            fileCheck.put("clientId", simpleID);
-            fileCheck.put("fileSize", file.length());
-            SafeRestClient.syncGet("/acceptFile/" + simpleID + "/", fileCheck, new AsyncHttpResponseHandler() {
-
-                @Override
-                public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
-
-                    RequestParams params = new RequestParams();
-                    say(file.getName() + " Does not exist. Uploading...");
-                    try {
-                        params.put("tehAwesomeFile", file);
-                        params.put("clientId", simpleID);
-                    } catch(FileNotFoundException e) {
-                        say("Could not find file: " + file.getName());
-                    }
-
-                    SafeRestClient.syncPost("/postFile/" + simpleID + "/", params, new AsyncHttpResponseHandler() {
-
+    public void upload(final File... files) {
+        // Check if file server is online
+        SafeRestClient.syncGet("/serverStatus", null, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                // File server is online. Upload the files
+                for (final File file : files) {
+                    say(file.getName() + " Checking");
+                    RequestParams fileCheck = new RequestParams();
+                    fileCheck.put("fileName", file.getName());
+                    fileCheck.put("clientId", simpleID);
+                    fileCheck.put("fileSize", file.length());
+                    // Check if the server wants this file
+                    SafeRestClient.syncGet("/acceptFile/" + simpleID + "/", fileCheck, new AsyncHttpResponseHandler() {
                         @Override
                         public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
+                            // Server wants the file. Upload it
+                            RequestParams params = new RequestParams();
+                            say(file.getName() + " Does not exist. Uploading...");
                             try {
-                                say(new String(responseBody, "UTF-8") + " Received");
-                            } catch (UnsupportedEncodingException e) {
-                                e.printStackTrace();
+                                params.put("tehAwesomeFile", file);
+                                params.put("clientId", simpleID);
+                            } catch(FileNotFoundException e) {
+                                say("Could not find file: " + file.getName());
                             }
+                            SafeRestClient.syncPost("/postFile/" + simpleID + "/", params, new AsyncHttpResponseHandler() {
+                                @Override
+                                public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
+                                    // Server has received the file
+                                    try {
+                                        if(responseBody != null) {
+                                            say(new String(responseBody, "UTF-8") + " Received");
+                                        }
+                                    } catch (UnsupportedEncodingException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                @Override
+                                public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
+                                    // Upload failed, try to notify control server
+                                    try {
+                                        if(responseBody != null) {
+                                            say(new String(responseBody, "UTF-8"));
+                                        }
+                                    } catch (UnsupportedEncodingException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            });
                         }
                         @Override
                         public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
+                            // The server did not accept the file
                             try {
                                 if(responseBody != null) {
                                     say(new String(responseBody, "UTF-8"));
@@ -187,19 +207,16 @@ public class SafeCommunications {
                         }
                     });
                 }
+                // All files were uploaded
+                say("Upload completed");
+            }
 
-                @Override
-                public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
-                    // The server did not accept the file
-                    try {
-                        say(new String(responseBody, "UTF-8"));
-                    } catch (UnsupportedEncodingException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-        }
-        say("Upload completed");
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                // File server was not online. Try to notify the control server
+                say("Could not reach file server at: " + SafeService.HTTP_SERVER + ":" + SafeService.HTTP_PORT);
+            }
+        });
     }
 
     public void setOut(DataOutputStream out) {

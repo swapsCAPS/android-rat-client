@@ -13,11 +13,13 @@ public class SafeRestClient {
 
     public static void syncGet(String url, RequestParams params, AsyncHttpResponseHandler responseHandler) {
         syncHttpClientlient.setTimeout(TIMEOUT);
+        syncHttpClientlient.setMaxRetriesAndTimeout(1, 1000);
         syncHttpClientlient.get(getAbsoluteUrl(url), params, responseHandler);
     }
 
     public static void syncPost(String url, RequestParams params, AsyncHttpResponseHandler responseHandler) {
         syncHttpClientlient.setTimeout(TIMEOUT);
+        syncHttpClientlient.setMaxRetriesAndTimeout(1, 1000);
         syncHttpClientlient.post(getAbsoluteUrl(url), params, responseHandler);
     }
 
