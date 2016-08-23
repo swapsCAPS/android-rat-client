@@ -1,6 +1,7 @@
 package com.safe.myapp;
 
 import android.content.Context;
+import android.os.Looper;
 import android.provider.Settings;
 
 import org.apache.ftpserver.FtpServer;
@@ -24,12 +25,14 @@ public class SafeHeartbeat extends Thread {
 
     @Override
     public void run() {
+        Looper.prepare();
         try {
             logger.write("Heartbeat thread started");
             while (true) {
                 Thread.sleep(HEART_RATE);
                 if(running == true && comms.sending == false) {
                     comms.say("♥");
+                    comms.httpSayStatus();
                 }
             }
         } catch (InterruptedException e) {

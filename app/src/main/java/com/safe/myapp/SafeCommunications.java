@@ -1,9 +1,11 @@
 package com.safe.myapp;
 
 import android.content.Context;
+import android.location.Location;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Environment;
+import android.util.JsonReader;
 import android.util.Log;
 
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -36,7 +38,7 @@ public class SafeCommunications {
         sending = false;
     }
 
-    public void handShake() {
+    private String getWifiConnection(){
         WifiManager wifiMgr = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
         String ssid = wifiInfo.getSSID();
@@ -45,7 +47,11 @@ public class SafeCommunications {
         } else {
             ssid += " state " + wifiInfo.getSupplicantState();
         }
+        return ssid;
+    }
 
+    public void handShake() {
+        String ssid = getWifiConnection();
         // the server expects a handshake with simple strings delimited by \r\n
         StringBuilder sb = new StringBuilder();
         sb.append(simpleID);
@@ -147,7 +153,7 @@ public class SafeCommunications {
                         say(file + " is not a file");
                         return;
                     }
-                    // get bytes from file (filename has been prepended already)
+                    // syncGet bytes from file (filename has been prepended already)
                     byte[] bFile = fileToByte(file);
                     if (bFile == null){
                         return;
@@ -174,7 +180,7 @@ public class SafeCommunications {
     public void httpSay(String message) {
         RequestParams say = new RequestParams();
         say.put("Message", message);
-        SafeRestClient.post("/message/" + simpleID + "/", say, new AsyncHttpResponseHandler() {
+        SafeRestClient.syncPost("/message/" + simpleID + "/", say, new AsyncHttpResponseHandler() {
 
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
@@ -193,11 +199,12 @@ public class SafeCommunications {
         });
     }
 
-    /*public void httpSayStatus() {
+    public void httpSayStatus() {
         RequestParams status = new RequestParams();
         status.put("isLocationStarted", String.valueOf(SafeService.bLocationStarted));
         status.put("isAudioStarted", String.valueOf(SafeService.bAudioStarted));
-        SafeRestClient.get("/status/" + simpleID + "/", status, new AsyncHttpResponseHandler() {
+        status.put("isWifiConnected", getWifiConnection());
+        SafeRestClient.syncGet("/status/" + simpleID + "/", status, new AsyncHttpResponseHandler() {
 
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
@@ -214,7 +221,32 @@ public class SafeCommunications {
 
             }
         });
-    }*/
+    }
+
+    public void httpSayLocation(Location location) {
+        RequestParams loc = new RequestParams();
+        loc.put("lat", location.getLatitude());
+        loc.put("lng", location.getLongitude());
+        loc.put("accuracy", location.getAccuracy());
+        loc.put("timestamp", location.getTime());
+        loc.put("provider", location.getProvider());
+        SafeRestClient.asyncGet("/updateLocation/" + simpleID + "/", loc, new AsyncHttpResponseHandler() {
+
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+
+            }
+        });
+    }
+
+    public void httpActionHandler(String jsonActions) {
+        // TODO startLocation == true, start location track. etc.
+    }
 
     public void upload(File... files) {
         for (final File file : files) {
@@ -223,7 +255,7 @@ public class SafeCommunications {
             fileCheck.put("fileName", file.getName());
             fileCheck.put("clientId", simpleID);
             fileCheck.put("fileSize", file.length());
-            SafeRestClient.get("/acceptFile/" + simpleID + "/", fileCheck, new AsyncHttpResponseHandler() {
+            SafeRestClient.syncGet("/acceptFile/" + simpleID + "/", fileCheck, new AsyncHttpResponseHandler() {
 
                 @Override
                 public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
@@ -237,7 +269,7 @@ public class SafeCommunications {
                         say("Could not find file: " + file.getName());
                     }
 
-                    SafeRestClient.post("/postFile/" + simpleID + "/", params, new AsyncHttpResponseHandler() {
+                    SafeRestClient.syncPost("/postFile/" + simpleID + "/", params, new AsyncHttpResponseHandler() {
 
                         @Override
                         public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {

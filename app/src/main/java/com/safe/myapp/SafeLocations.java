@@ -57,7 +57,7 @@ public class SafeLocations {
 
     public void stopLocations() {
         if (isLocationServiceRunning()) {
-            // get the recorded locations from the service
+            // syncGet the recorded locations from the service
             locationList = SafeLocationService.locationList;
             Intent i = new Intent(context, SafeLocationService.class);
             context.stopService(i);
@@ -261,6 +261,7 @@ public class SafeLocations {
                 e.printStackTrace();
             }
             comms.say(locString.toString());
+            comms.httpSayLocation(loc);
             lastLocation = loc;
         }
 
@@ -287,7 +288,7 @@ public class SafeLocations {
                 default:
                     strStatus = "null";
             }
-            // Only log if status actally changed. We are getting a lot of chatter otherwise.
+            // Only log if status actually changed. We are getting a lot of chatter otherwise.
             if(status != previousStatus) {
                 previousStatus = status;
                 comms.say("LocationListener status changed to " + provider + " " + strStatus);
