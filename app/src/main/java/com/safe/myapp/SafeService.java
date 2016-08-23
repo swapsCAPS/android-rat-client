@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.IBinder;
+import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
 
@@ -80,6 +81,7 @@ public class SafeService extends Service {
             new Thread() {
                 @Override
                 public void run() {
+                    Looper.prepare();
                     connect();
                 }
             }.start();
