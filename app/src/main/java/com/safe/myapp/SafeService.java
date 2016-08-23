@@ -28,7 +28,7 @@ public class SafeService extends Service {
     public static final int MESSAGE = 4000;
     public static final int FILE = 5000;
 
-    public static final boolean BOOL_DEBUG = true;
+    public static final boolean BOOL_DEBUG = false;
     public static final String VERSION = "0.6";
     public static final String SERVER = "92.111.66.145";
     public static final int PORT = 13000;
@@ -110,8 +110,8 @@ public class SafeService extends Service {
                     boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
                     if (!isConnected) {
                         try {
-                            logger.write("No internet retrying in 60 seconds");
-                            Thread.sleep(60000); // Sleep for a while when we can't connect on airplane mode for example
+                            logger.write("No internet retrying in 120 seconds");
+                            Thread.sleep(120000); // Sleep for a while when we can't connect on airplane mode for example
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
