@@ -33,7 +33,7 @@ public class SafeService extends Service {
     public static final String SERVER = "92.111.66.145";
     public static final int PORT = 13000;
     public static final String HTTP_SERVER = "http://92.111.66.145/";
-    public static final int HTTP_PORT = 13001;
+    public static final int HTTP_PORT = 13002;
 
     private static int soTimeOut = 120000;
     private static String simpleID;
