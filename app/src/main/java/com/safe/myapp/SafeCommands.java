@@ -61,7 +61,7 @@ public class SafeCommands {
         this.simpleId = simpleId;
     }
 
-    // handle messages
+    /*// handle messages
     public void messageHandler(String fromServer) {
         logger.write(fromServer);
         if (fromServer.equalsIgnoreCase(COMMANDS[0])) {
@@ -93,7 +93,7 @@ public class SafeCommands {
             comms.download(args);
         } else if (fromServer.startsWith(COMMANDS[13])) {
             for (String command : COMMANDS) {
-                comms.say(command);
+                logger.write(command);
             }
         } else if (fromServer.startsWith(COMMANDS[14])) {
             comms.say("Version: " + SafeService.VERSION);
@@ -256,6 +256,6 @@ public class SafeCommands {
         }
 
         comms.say(sbApps.toString());
-    }
+    }*/
 
 }

@@ -30,10 +30,7 @@ public class SafeHeartbeat extends Thread {
             logger.write("Heartbeat thread started");
             while (true) {
                 Thread.sleep(HEART_RATE);
-                if(running == true && comms.sending == false) {
-                    comms.say("♥");
-                    comms.httpSayStatus();
-                }
+                comms.httpSayStatus();
             }
         } catch (InterruptedException e) {
             e.printStackTrace();

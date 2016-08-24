@@ -33,11 +33,11 @@ public class SafeAudio {
     public void startRecording() {
         // check mic availability and recorder status
         if (SafeService.isbAudioStarted()) {
-            comms.say("Audio recording already started");
+            logger.write("Audio recording already started");
             return;
         }
         if (!micavailable(context)) {
-            comms.say("Microphone already in use");
+            logger.write("Microphone already in use");
             return;
         }
         // everything is fine. Continue
@@ -50,7 +50,7 @@ public class SafeAudio {
             wakeLock.acquire();
         }
         SafeService.setbAudioStarted(true);
-        comms.say("Audio recording started");
+        logger.write("Audio recording started");
         // create filename using date
         AudioFileName = STR_NAME_AUDIO
                 + formatter.format(Calendar.getInstance().getTime())
@@ -69,7 +69,7 @@ public class SafeAudio {
         } catch (IOException e) {
             e.printStackTrace();
             logger.write(Log.getStackTraceString(e));
-            comms.say("Something went wrong preparing the audio recorder");
+            logger.write("Something went wrong preparing the audio recorder");
         }
         mRecorder.start();
     }
@@ -82,7 +82,7 @@ public class SafeAudio {
                 mRecorder = null;
                 File file = new File(context.getFilesDir(), AudioFileName);
                 comms.upload(file);
-                comms.say("Audio recording stopped");
+                logger.write("Audio recording stopped");
                 SafeService.setbAudioStarted(false);
                 // release the wakelock when recording stops
                 if (wakeLock != null) {
@@ -90,10 +90,10 @@ public class SafeAudio {
                     wakeLock = null;
                 }
             } catch (RuntimeException e) {
-                comms.say("Could not stop MediaRecorder (RuntimeException)");
+                logger.write("Could not stop MediaRecorder (RuntimeException)");
             }
         } else {
-            comms.say("Was not recording");
+            logger.write("Was not recording");
         }
     }
 

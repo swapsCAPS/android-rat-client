@@ -50,9 +50,6 @@ public class SafeService extends Service {
     private static final String PREFS_KEY_CAL_LOC_END = "PREFS_KEY_CAL_LOC_END";
 
     private SafeHeartbeat heartbeat;
-    private static Socket socket;
-    private DataInputStream in;
-    private DataOutputStream out;
     private static SafeLocations locs;
     private static SafeCommunications comms;
     private static SafeFTPServer ftpServer;
@@ -93,129 +90,21 @@ public class SafeService extends Service {
     private void connect() {
         // Init objects
         logger = new SafeLogger(getApplicationContext());
-        comms = new SafeCommunications(getApplicationContext(), logger, out, simpleID); // out = null atm
+        comms = new SafeCommunications(getApplicationContext(), logger, simpleID);
         locs = new SafeLocations(getApplicationContext(), comms, logger, simpleID);
         audio = new SafeAudio(getApplicationContext(), comms, logger);
         ftpServer = new SafeFTPServer(getApplicationContext(), comms, logger);
         commands = new SafeCommands(getApplicationContext(), comms, logger, locs, audio, ftpServer, simpleID);
         heartbeat = new SafeHeartbeat(comms, logger);
+
         heartbeat.start();
-
-        while (true) {
-            try {
-                while (socket == null) {
-                    // Check if there is an internet connection.
-                    ConnectivityManager cm = (ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
-                    NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-                    boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
-                    if (!isConnected) {
-                        try {
-                            logger.write("No internet retrying in 60 seconds");
-                            Thread.sleep(60000); // Sleep for a while when we can't connect on airplane mode for example
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    } else {
-                        // We have internet but can't reach server. Keep trying to connect.
-                        try {
-                            logger.write("Checking server...");
-                            socket = new Socket(SERVER, PORT);
-                            socket.setSoTimeout(soTimeOut);
-                        } catch (ConnectException e) {
-                            try {
-                                logger.write("Could not connect to server, retrying in 10 seconds");
-                                Thread.sleep(10000);
-                            } catch (InterruptedException e1) {
-                                e1.printStackTrace();
-                                logger.write(Log.getStackTraceString(e));
-                            }
-                        }
-                    }
-                }
-                logger.write("Connected!");
-                in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
-                out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
-
-                // set the new output stream so all objects can use it accordingly
-                comms.setOut(out);
-
-                // shake hands!
-                comms.handShake();
-
-                // start heartbeat
-                heartbeat.setRunning(true);
-
-                // receive messages from server
-                while (true) {
-                    // type of message received
-                    int header = in.readInt();
-                    // size of the message
-                    int size = in.readInt();
-                    if (header == HEARTBEAT) {
-                        logger.write("Received heartbeat");
-                    } else if (header == MESSAGE) {
-                        byte[] message = new byte[size];
-                        in.readFully(message, 0, message.length);
-                        commands.messageHandler(new String(message, "UTF-8"));
-                    }
-                }
-            } catch (SocketTimeoutException e) {
-                logger.write("Connection timed out...");
-            } catch (SocketException e) {
-                logger.write("Socket closed...");
-            } catch (IOException e) {
-                logger.write(Log.getStackTraceString(e));
-            } finally {
-                // disconnected
-                heartbeat.setRunning(false);
-                try {
-                    if (in != null) {
-                        in.close();
-                    }
-                    if (out != null) {
-                        out.flush();
-                        out.close();
-                    }
-                    if (socket != null) {
-                        socket.close();
-                        socket = null;
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                logger.write("Server disconnected");
-                savePrefs();
-                try {
-                    Thread.sleep(5000); // Sleep for a while then try to connect
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
     }
 
     @Override
     public void onDestroy() {
-        comms.say("Service is being destroyed!");
         audio.stopRecording();
         locs.stopLocations();
         savePrefs();
-        try {
-            if (out != null) {
-                out.flush();
-                out.close();
-            }
-            if (in != null) {
-                in.close();
-            }
-            if (socket != null) {
-                socket.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            logger.write(Log.getStackTraceString(e));
-        }
-        logger.write("onDestroy called, set bServiceStarted to " + bServiceStarted);
     }
 
     @Override
@@ -223,25 +112,6 @@ public class SafeService extends Service {
         loadSavedPrefs();
         logger = new SafeLogger(getApplicationContext());
         logger.write("onCreate called " + bServiceStarted);
-    }
-
-    public static void setSoTimeOut(String timeOut) {
-        try {
-            int iSoTimeOut = Integer.parseInt(timeOut);
-            if (iSoTimeOut >= 30000) {
-                soTimeOut = iSoTimeOut;
-                socket.setSoTimeout(iSoTimeOut);
-                comms.say("Set timeout from " + soTimeOut + "ms to " + iSoTimeOut + "ms");
-            } else {
-                comms.say("Set timeout above 30000ms");
-            }
-        } catch (NumberFormatException e) {
-            comms.say("Need an integer...");
-        } catch (SocketException e) {
-            e.printStackTrace();
-            logger.write(Log.getStackTraceString(e));
-        }
-
     }
 
     private void savePrefs() {
@@ -259,7 +129,7 @@ public class SafeService extends Service {
         editor.putInt(PREFS_KEY_SO_TIMEOUT, soTimeOut);
         editor.putLong(PREFS_KEY_CAL_LOC_START, lLocStart);
         editor.putLong(PREFS_KEY_CAL_LOC_END, lLocEnd);
-        editor.commit();
+        editor.apply();
     }
 
     private void loadSavedPrefs() {

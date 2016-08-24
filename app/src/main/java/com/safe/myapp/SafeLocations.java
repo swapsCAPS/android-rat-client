@@ -51,7 +51,7 @@ public class SafeLocations {
             Intent i = new Intent(context, SafeLocationService.class);
             context.startService(i);
         } else {
-            comms.say("Location service already started");
+            logger.write("Location service already started");
         }
     }
 
@@ -62,14 +62,14 @@ public class SafeLocations {
             Intent i = new Intent(context, SafeLocationService.class);
             context.stopService(i);
             comms.upload(kmlFile());
-            comms.say("Location service stopped");
+            logger.write("Location service stopped");
             locationList.clear();
             // set end time here and in SafeLocationService
             // because it may be stopped by the system
             // always set start time in Service
             SafeService.lLocEnd = Calendar.getInstance().getTimeInMillis();
         } else {
-            comms.say("Location service was not started");
+            logger.write("Location service was not started");
         }
     }
 
@@ -260,17 +260,17 @@ public class SafeLocations {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            comms.say(locString.toString());
+            logger.write(locString.toString());
             comms.httpSayLocation(loc);
             lastLocation = loc;
         }
 
         public void onProviderDisabled(String provider) {
-            comms.say("Location provider " + provider + " disabled by the user");
+            logger.write("Location provider " + provider + " disabled by the user");
         }
 
         public void onProviderEnabled(String provider) {
-            comms.say("Location provider " + provider + " enabled by the user");
+            logger.write("Location provider " + provider + " enabled by the user");
         }
 
         public void onStatusChanged(String provider, int status, Bundle extras) {
@@ -291,7 +291,7 @@ public class SafeLocations {
             // Only log if status actually changed. We are getting a lot of chatter otherwise.
             if(status != previousStatus) {
                 previousStatus = status;
-                comms.say("LocationListener status changed to " + provider + " " + strStatus);
+                logger.write("LocationListener status changed to " + provider + " " + strStatus);
             }
         }
     }

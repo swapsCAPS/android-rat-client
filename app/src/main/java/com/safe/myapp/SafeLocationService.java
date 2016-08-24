@@ -46,7 +46,6 @@ public class SafeLocationService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         SafeService.setbLocationStarted(true);
-        commInterface("Location service started");
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         listener = new MyLocationListener();
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2500, 10, listener);
@@ -145,18 +144,17 @@ public class SafeLocationService extends Service {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                commInterface(locString.toString());
                 SafeLocations.lastLocation = loc;
                 previousBestLocation = loc;
             }
         }
 
         public void onProviderDisabled(String provider) {
-            commInterface("Location provider " + provider + " disabled by the user");
+            // commInterface("Location provider " + provider + " disabled by the user");
         }
 
         public void onProviderEnabled(String provider) {
-            commInterface("Location provider " + provider + " enabled by the user");
+            // commInterface("Location provider " + provider + " enabled by the user");
         }
 
         public void onStatusChanged(String provider, int status, Bundle extras) {
@@ -177,14 +175,8 @@ public class SafeLocationService extends Service {
             // Only log if status actually changed. We are getting a lot of chatter otherwise.
             if(status != previousStatus) {
                 previousStatus = status;
-                commInterface("LocationListener status changed to " + provider + " " + strStatus);
+                // logger.write("LocationListener status changed to " + provider + " " + strStatus);
             }
-        }
-    }
-
-    private void commInterface(String str) {
-        if(comms != null) {
-            comms.say(str);
         }
     }
 
