@@ -144,12 +144,12 @@ public class SafeCommunications {
 
     public void upload(final File... files) {
         // Check if file server is online
+        say("Upload started");
         SafeRestClient.syncGet("/serverStatus", null, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 // File server is online. Upload the files
                 for (final File file : files) {
-                    say(file.getName() + " Checking");
                     RequestParams fileCheck = new RequestParams();
                     fileCheck.put("fileName", file.getName());
                     fileCheck.put("clientPath", file.getParentFile().getPath());
@@ -184,13 +184,13 @@ public class SafeCommunications {
                                 @Override
                                 public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
                                     // Upload failed, try to notify control server
-                                    try {
+                                    /*try {
                                         if (responseBody != null) {
                                             say(new String(responseBody, "UTF-8"));
                                         }
                                     } catch (UnsupportedEncodingException e) {
                                         e.printStackTrace();
-                                    }
+                                    }*/
                                 }
                             });
                         }

