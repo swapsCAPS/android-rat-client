@@ -10,6 +10,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 
@@ -183,15 +184,12 @@ public class SafeLocationService extends Service {
         }
     }
 
+    // NetworkOnMainThread on Nougat...
     private void commInterface(String str) {
-        if(comms != null) {
-            new AsyncTask<String, Void, Void>(){
-                @Override
-                protected Void doInBackground(String... strings) {
-                    comms.say(strings[0]);
-                    return null;
-                }
-            }.execute(str);
+        if(Build.VERSION.SDK_INT < 24) {
+            comms.say(str);
+        } else {
+            SafeLocations.logger.write("ANDROID VERSION >= 24");
         }
     }
 
