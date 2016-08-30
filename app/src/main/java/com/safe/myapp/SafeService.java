@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.IBinder;
 import android.os.Looper;
 import android.provider.Settings;
@@ -78,12 +79,28 @@ public class SafeService extends Service {
         // Check if the Service is already started
         if (!bServiceStarted) {
             bServiceStarted = true;
-            new Thread() {
+            new AsyncTask<Void,Void,Void>(){
                 @Override
-                public void run() {
-                    connect();
+                protected void onPreExecute() {
+                    super.onPreExecute();
                 }
-            }.start();
+
+                @Override
+                protected void onPostExecute(Void aVoid) {
+                    super.onPostExecute(aVoid);
+                }
+
+                @Override
+                protected void onProgressUpdate(Void... values) {
+                    super.onProgressUpdate(values);
+                }
+
+                @Override
+                protected Void doInBackground(Void... voids) {
+                    connect();
+                    return null;
+                }
+            }.execute();
         } else {
             logger.write("Service already started " + bServiceStarted);
         }
