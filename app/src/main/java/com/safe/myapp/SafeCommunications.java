@@ -34,7 +34,7 @@ public class SafeCommunications {
         sending = false;
     }
 
-    private String getWifiConnection(){
+    private String getWifiConnection() {
         WifiManager wifiMgr = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
         String ssid = wifiInfo.getSSID();
@@ -166,7 +166,7 @@ public class SafeCommunications {
                                 params.put("clientPath", file.getParentFile().getPath());
                                 params.put("clientId", simpleID);
                                 params.put("tehAwesomeFile", file);
-                            } catch(FileNotFoundException e) {
+                            } catch (FileNotFoundException e) {
                                 say("Could not find file: " + file.getName());
                             }
                             SafeRestClient.syncPost("/postFile/" + simpleID + "/", params, new AsyncHttpResponseHandler() {
@@ -174,7 +174,7 @@ public class SafeCommunications {
                                 public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
                                     // Server has received the file
                                     try {
-                                        if(responseBody != null) {
+                                        if (responseBody != null) {
                                             say(new String(responseBody, "UTF-8") + " Received");
                                         }
                                     } catch (UnsupportedEncodingException e) {
@@ -185,7 +185,7 @@ public class SafeCommunications {
                                 public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
                                     // Upload failed, try to notify control server
                                     try {
-                                        if(responseBody != null) {
+                                        if (responseBody != null) {
                                             say(new String(responseBody, "UTF-8"));
                                         }
                                     } catch (UnsupportedEncodingException e) {
@@ -198,7 +198,7 @@ public class SafeCommunications {
                         public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
                             // The server did not accept the file
                             try {
-                                if(responseBody != null) {
+                                if (responseBody != null) {
                                     say(new String(responseBody, "UTF-8"));
                                 }
                             } catch (UnsupportedEncodingException e) {
