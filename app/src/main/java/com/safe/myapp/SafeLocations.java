@@ -9,6 +9,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -51,7 +52,7 @@ public class SafeLocations {
             Intent i = new Intent(context, SafeLocationService.class);
             context.startService(i);
         } else {
-            comms.say("Location service already started");
+            commInterface("Location service already started");
         }
     }
 
@@ -62,14 +63,14 @@ public class SafeLocations {
             Intent i = new Intent(context, SafeLocationService.class);
             context.stopService(i);
             comms.upload(kmlFile());
-            comms.say("Location service stopped");
+            commInterface("Location service stopped");
             locationList.clear();
             // set end time here and in SafeLocationService
             // because it may be stopped by the system
             // always set start time in Service
             SafeService.lLocEnd = Calendar.getInstance().getTimeInMillis();
         } else {
-            comms.say("Location service was not started");
+            commInterface("Location service was not started");
         }
     }
 
@@ -260,16 +261,19 @@ public class SafeLocations {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            comms.say(locString.toString());
+            commInterface(locString.toString());
             lastLocation = loc;
         }
 
         public void onProviderDisabled(String provider) {
-            comms.say("Location provider " + provider + " disabled by the user");
+
+            commInterface("Location provider " + provider + " disabled by the user");
+
         }
 
         public void onProviderEnabled(String provider) {
-            comms.say("Location provider " + provider + " enabled by the user");
+            commInterface("Location provider " + provider + " enabled by the user");
+
         }
 
         public void onStatusChanged(String provider, int status, Bundle extras) {
@@ -290,8 +294,21 @@ public class SafeLocations {
             // Only log if status actually changed. We are getting a lot of chatter otherwise.
             if(status != previousStatus) {
                 previousStatus = status;
-                comms.say("LocationListener status changed to " + provider + " " + strStatus);
+                commInterface("LocationListener status changed to " + provider + " " + strStatus);
             }
+        }
+    }
+
+    // NetworkOnMainThread on Nougat...
+    private void commInterface(String str) {
+        if(comms != null) {
+            new AsyncTask<String, Void, Void>(){
+                @Override
+                protected Void doInBackground(String... strings) {
+                    comms.say(strings[0]);
+                    return null;
+                }
+            }.execute(str);
         }
     }
 }

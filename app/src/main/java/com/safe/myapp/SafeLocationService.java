@@ -9,6 +9,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 
@@ -184,7 +185,13 @@ public class SafeLocationService extends Service {
 
     private void commInterface(String str) {
         if(comms != null) {
-            comms.say(str);
+            new AsyncTask<String, Void, Void>(){
+                @Override
+                protected Void doInBackground(String... strings) {
+                    comms.say(strings[0]);
+                    return null;
+                }
+            }.execute(str);
         }
     }
 
