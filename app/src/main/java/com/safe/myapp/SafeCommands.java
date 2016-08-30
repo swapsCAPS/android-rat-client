@@ -47,10 +47,9 @@ public class SafeCommands {
             "ftp start", "ftp stop", "apps"};
 
 
-    public SafeCommands(Context context, SafeCommunications comms, SafeLogger logger,
+    public SafeCommands(Context context, SafeLogger logger,
                         SafeLocations locs, SafeAudio audio, SafeFTPServer ftpServer, String simpleId) {
         this.context = context;
-        this.comms = comms;
         this.logger = logger;
         this.locs = locs;
         this.audio = audio;

@@ -2,6 +2,7 @@ package com.safe.myapp;
 
 import android.content.Context;
 import android.os.Looper;
+import android.os.Message;
 import android.provider.Settings;
 
 import org.apache.ftpserver.FtpServer;
@@ -12,8 +13,7 @@ public class SafeHeartbeat extends Thread {
     private SafeCommunications comms;
     private SafeLogger logger;
 
-    public SafeHeartbeat(SafeCommunications comms, SafeLogger logger) {
-        this.comms = comms;
+    public SafeHeartbeat(SafeLogger logger) {
         this.logger = logger;
         this.running = true;
     }
@@ -31,7 +31,9 @@ public class SafeHeartbeat extends Thread {
             while (true) {
                 Thread.sleep(HEART_RATE);
                 if(running == true && comms.sending == false) {
-                    comms.say("♥");
+                    Message msg = new Message();
+                    msg.arg1 = 2;
+                    comms.mHandler.sendMessage(msg);
                 }
             }
         } catch (InterruptedException e) {

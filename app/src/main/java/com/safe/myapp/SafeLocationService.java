@@ -10,6 +10,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 
@@ -176,7 +177,7 @@ public class SafeLocationService extends Service {
                     strStatus = "null";
             }
             // Only log if status actually changed. We are getting a lot of chatter otherwise.
-            if(status != previousStatus) {
+            if (status != previousStatus) {
                 previousStatus = status;
                 commInterface("LocationListener status changed to " + provider + " " + strStatus);
             }
@@ -184,14 +185,12 @@ public class SafeLocationService extends Service {
     }
 
     private void commInterface(String str) {
-        if(comms != null) {
-            new AsyncTask<String, Void, Void>(){
-                @Override
-                protected Void doInBackground(String... strings) {
-                    comms.say(strings[0]);
-                    return null;
-                }
-            }.execute(str);
+        if(Build.VERSION.SDK_INT < 24){
+            if (comms != null) {
+                comms.say(str);
+            }
+        } else {
+            // Device is Nougat... Will throw NetworkOnMainThreadException
         }
     }
 

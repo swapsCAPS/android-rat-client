@@ -24,9 +24,8 @@ public class SafeAudio {
     private PowerManager powerManager;
     private PowerManager.WakeLock wakeLock;
 
-    public SafeAudio(Context context, SafeCommunications comms, SafeLogger logger) {
+    public SafeAudio(Context context, SafeLogger logger) {
         this.context = context;
-        this.comms = comms;
         this.logger = logger;
     }
 

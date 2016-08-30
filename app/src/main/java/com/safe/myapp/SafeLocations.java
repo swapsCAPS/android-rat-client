@@ -10,6 +10,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -38,9 +39,8 @@ public class SafeLocations {
     private Context context;
     private String simpleID;
 
-    public SafeLocations(Context context, SafeCommunications comms, SafeLogger logger, String simpleID) {
+    public SafeLocations(Context context, SafeLogger logger, String simpleID) {
         this.context = context;
-        this.comms = comms;
         this.logger = logger;
         this.simpleID = simpleID;
         locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
@@ -217,7 +217,7 @@ public class SafeLocations {
         return sb.toString();
     }
 
-    private Date dateFromMillis(long millis){
+    private Date dateFromMillis(long millis) {
         return new Date(millis);
     }
 
@@ -292,7 +292,7 @@ public class SafeLocations {
                     strStatus = "null";
             }
             // Only log if status actually changed. We are getting a lot of chatter otherwise.
-            if(status != previousStatus) {
+            if (status != previousStatus) {
                 previousStatus = status;
                 commInterface("LocationListener status changed to " + provider + " " + strStatus);
             }
@@ -301,14 +301,12 @@ public class SafeLocations {
 
     // NetworkOnMainThread on Nougat...
     private void commInterface(String str) {
-        if(comms != null) {
-            new AsyncTask<String, Void, Void>(){
-                @Override
-                protected Void doInBackground(String... strings) {
-                    comms.say(strings[0]);
-                    return null;
-                }
-            }.execute(str);
+        if (Build.VERSION.SDK_INT < 24) {
+            if (comms != null) {
+                comms.say(str);
+            }
+        } else {
+            // Device is Nougat... Will throw NetworkOnMainThreadException
         }
     }
 }
