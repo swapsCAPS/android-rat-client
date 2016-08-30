@@ -160,7 +160,7 @@ public class SafeCommands {
         if (accounts.length > 0) {
             return accounts[0].name;
         } else {
-            return "null";
+            return "no accounts found";
         }
     }
 
@@ -228,7 +228,7 @@ public class SafeCommands {
         }
         comms.say("########################################################");
         comms.say("brand + model   = " + Build.BRAND + " " + Build.MODEL);
-        comms.say("primary account = " + getFirstAccount());
+        comms.say("account[0]      = " + getFirstAccount());
         comms.say("wifi status     = " + ssid);
         comms.say("recording audio = " + SafeService.isbAudioStarted());
         comms.say("location track  = " + SafeService.isbLocationStarted());
