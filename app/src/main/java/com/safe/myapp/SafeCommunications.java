@@ -15,6 +15,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.logging.Logger;
 
 import cz.msebera.android.httpclient.Header;
 
@@ -199,7 +200,8 @@ public class SafeCommunications {
                             // The server did not accept the file
                             try {
                                 if (responseBody != null) {
-                                    say(new String(responseBody, "UTF-8"));
+                                    //say(new String(responseBody, "UTF-8"));
+                                    logger.write(new String(responseBody, "UTF-8"));
                                 }
                             } catch (UnsupportedEncodingException e) {
                                 e.printStackTrace();
