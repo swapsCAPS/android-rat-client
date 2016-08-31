@@ -9,8 +9,12 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Looper;
 import android.util.Log;
+
+import org.json.JSONException;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -45,7 +49,8 @@ public class SafeLocations {
     }
 
     public void getSingleLocation() {
-        locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, listener, context.getMainLooper());
+        logger.write("getSingleLocation");
+        locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, listener, Looper.getMainLooper());
     }
 
     private boolean isLocationServiceRunning() {
@@ -90,7 +95,11 @@ public class SafeLocations {
                 e.printStackTrace();
             }
             logger.write(locString.toString());
-            comms.sayLocation(loc);
+            try {
+                comms.sayLocation(loc);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
             lastLocation = loc;
         }
 

@@ -1,8 +1,13 @@
 package com.safe.myapp;
 
+import android.content.Context;
+
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 import com.loopj.android.http.SyncHttpClient;
+
+import cz.msebera.android.httpclient.entity.StringEntity;
+
 
 public class SafeRestClient {
     private static final String BASE_URL = SafeService.HTTP_SERVER;
@@ -18,6 +23,10 @@ public class SafeRestClient {
     public static void post(String url, RequestParams params, AsyncHttpResponseHandler responseHandler) {
         httpClient.setTimeout(TIMEOUT);
         httpClient.post(getAbsoluteUrl(url), params, responseHandler);
+    }
+
+    public static void postJson(String url, Context context, StringEntity entity, AsyncHttpResponseHandler responseHandler){
+        httpClient.post(context, getAbsoluteUrl(url), entity, "application/json", responseHandler);
     }
 
     private static String getAbsoluteUrl(String relativeUrl) {

@@ -3,19 +3,15 @@ package com.safe.myapp;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
-import android.os.Message;
-import android.os.Process;
 import android.provider.Settings;
 
 public class SafeService extends Service {
 
     public static final boolean BOOL_DEBUG = true;
     public static final String VERSION = "0.7";
-    public static final String HTTP_SERVER = "http://92.111.66.145/";
+    public static final String HTTP_SERVER = "http://android.applicationservice.nl/";
     public static final int HTTP_PORT = 13002;
     private static String simpleID;
 
@@ -23,7 +19,12 @@ public class SafeService extends Service {
     private static final String PREFS_NAME = "WowSuchSharedPreferencesVery1337";
 
     private SafeStatus status;
-    private SafeLocations locs;
+
+    public static SafeLocations getLocs() {
+        return locs;
+    }
+
+    private static SafeLocations locs;
     private SafeCommunications comms;
     private SafeFTPServer ftpServer;
     private SafeCommands commands;
@@ -41,7 +42,7 @@ public class SafeService extends Service {
 
     @Override
     public void onCreate() {
-        if(BOOL_DEBUG){
+        if (BOOL_DEBUG) {
             simpleID = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID) + "DEBUG";
         } else {
             simpleID = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
@@ -63,10 +64,10 @@ public class SafeService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         logger.write("onStartCommand called");
-        new Thread(){
-            public void run(){
+        new Thread() {
+            public void run() {
                 Looper.prepare();
-                while(pollServer) {
+                while (pollServer) {
                     comms.pollServer();
                     try {
                         Thread.sleep(10000);
@@ -83,7 +84,6 @@ public class SafeService extends Service {
     @Override
     public void onDestroy() {
         audio.stopRecording();
-        // locs.stopLocations();
         savePrefs();
     }
 
