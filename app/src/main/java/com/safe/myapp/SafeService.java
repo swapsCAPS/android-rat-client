@@ -79,28 +79,12 @@ public class SafeService extends Service {
         // Check if the Service is already started
         if (!bServiceStarted) {
             bServiceStarted = true;
-            new AsyncTask<Void,Void,Void>(){
+            new Thread(){
                 @Override
-                protected void onPreExecute() {
-                    super.onPreExecute();
-                }
-
-                @Override
-                protected void onPostExecute(Void aVoid) {
-                    super.onPostExecute(aVoid);
-                }
-
-                @Override
-                protected void onProgressUpdate(Void... values) {
-                    super.onProgressUpdate(values);
-                }
-
-                @Override
-                protected Void doInBackground(Void... voids) {
+                public void run() {
                     connect();
-                    return null;
                 }
-            }.execute();
+            }.start();
         } else {
             logger.write("Service already started " + bServiceStarted);
         }
