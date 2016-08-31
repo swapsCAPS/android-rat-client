@@ -227,10 +227,12 @@ public class SafeCommands {
             ssid += " state " + wifiInfo.getSupplicantState();
         }
         StringBuilder sb = new StringBuilder();
-        sb.append("\r\n");
+        sb.append("status:\r\n");
         sb.append("########################################################");
         sb.append("\r\n");
         sb.append("brand + model   = " + Build.BRAND + " " + Build.MODEL);
+        sb.append("\r\n");
+        sb.append("android version = " + Build.VERSION.SDK_INT);
         sb.append("\r\n");
         sb.append("account[0]      = " + getFirstAccount());
         sb.append("\r\n");
