@@ -12,6 +12,7 @@ import android.location.LocationProvider;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Looper;
 import android.util.Log;
 
 import java.io.File;
@@ -76,7 +77,7 @@ public class SafeLocations {
     }
 
     public void getSingleLocation() {
-        locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, listener, context.getMainLooper());
+        locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, listener, Looper.getMainLooper());
     }
 
     public String getLastKnownAddress() {
