@@ -151,7 +151,7 @@ public class SafeCommunications {
 
                     // Upload files to server
                     say("Sending " + ls.toString());
-                    upload(filesToSend.toArray(new File[files.size()]));
+                    upload(filesToSend.toArray(new File[filesToSend.size()]));
                 } else {
                     say(fileLoc + " is not a directory");
                 }
