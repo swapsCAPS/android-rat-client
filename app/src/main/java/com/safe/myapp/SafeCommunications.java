@@ -1,8 +1,6 @@
 package com.safe.myapp;
 
 import android.content.Context;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.os.Environment;
 import android.util.Log;
 

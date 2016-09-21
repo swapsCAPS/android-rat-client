@@ -6,9 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.AsyncTask;
 import android.os.IBinder;
-import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
 

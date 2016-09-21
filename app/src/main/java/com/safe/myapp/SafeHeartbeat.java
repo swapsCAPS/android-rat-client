@@ -1,10 +1,6 @@
 package com.safe.myapp;
 
-import android.content.Context;
 import android.os.Looper;
-import android.provider.Settings;
-
-import org.apache.ftpserver.FtpServer;
 
 public class SafeHeartbeat extends Thread {
     private static final int HEART_RATE = 10000;
