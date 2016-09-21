@@ -3,16 +3,13 @@
     package="com.safe.myapp">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:allowBackup="true"
@@ -32,15 +29,10 @@
 
         <activity
             android:name=".SafeDialog"
-            android:theme="@android:style/Theme.Dialog"></activity>
+            android:theme="@android:style/Theme.Dialog" />
 
         <service
             android:name=".SafeService"
-            android:enabled="true"
-            android:exported="true" />
-
-        <service
-            android:name=".SafeLocationService"
             android:enabled="true"
             android:exported="true" />
 
@@ -52,7 +44,7 @@
 
         <activity
             android:name=".ChangeMeToMainActivity"
-            android:label="@string/title_activity_some"></activity>
+            android:label="@string/title_activity_some" />
     </application>
 
 </manifest>

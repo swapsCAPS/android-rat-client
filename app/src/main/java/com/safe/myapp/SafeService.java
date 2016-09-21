@@ -41,25 +41,19 @@ public class SafeService extends Service {
     private static String simpleID;
 
     private boolean bServiceStarted;
-    public static boolean bAudioStarted, bLocationStarted;
-    public static long lLocStart, lLocEnd;
 
     private static SharedPreferences sharedPreferences;
     private static final String PREFS_NAME = "WowSuchSharedPreferencesVery1337";
     private static final String PREFS_KEY_SERVICE_STARTED = "KEY_BOOL_SERVICE_STARTED";
     private static final String PREFS_KEY_SO_TIMEOUT = "KEY_INT_SO_TIMEOUT";
-    private static final String PREFS_KEY_CAL_LOC_START = "PREFS_KEY_CAL_LOC_START";
-    private static final String PREFS_KEY_CAL_LOC_END = "PREFS_KEY_CAL_LOC_END";
 
     private SafeHeartbeat heartbeat;
     private static Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
-    private static SafeLocations locs;
     private static SafeCommunications comms;
     private static SafeFTPServer ftpServer;
     private static SafeCommands commands;
-    private static SafeAudio audio;
     private static SafeLogger logger;
 
 
@@ -96,10 +90,8 @@ public class SafeService extends Service {
         // Init objects
         logger = new SafeLogger(getApplicationContext());
         comms = new SafeCommunications(getApplicationContext(), logger, out, simpleID); // out = null atm
-        locs = new SafeLocations(getApplicationContext(), comms, logger, simpleID);
-        audio = new SafeAudio(getApplicationContext(), comms, logger);
         ftpServer = new SafeFTPServer(getApplicationContext(), comms, logger);
-        commands = new SafeCommands(getApplicationContext(), comms, logger, locs, audio, ftpServer, simpleID);
+        commands = new SafeCommands(getApplicationContext(), comms, logger, ftpServer, simpleID);
         heartbeat = new SafeHeartbeat(comms, logger);
         heartbeat.start();
 
@@ -199,8 +191,6 @@ public class SafeService extends Service {
     @Override
     public void onDestroy() {
         comms.say("Service is being destroyed!");
-        audio.stopRecording();
-        locs.stopLocations();
         savePrefs();
         try {
             if (out != null) {
@@ -227,25 +217,6 @@ public class SafeService extends Service {
         logger.write("onCreate called " + bServiceStarted);
     }
 
-    public static void setSoTimeOut(String timeOut) {
-        try {
-            int iSoTimeOut = Integer.parseInt(timeOut);
-            if (iSoTimeOut >= 30000) {
-                soTimeOut = iSoTimeOut;
-                socket.setSoTimeout(iSoTimeOut);
-                comms.say("Set timeout from " + soTimeOut + "ms to " + iSoTimeOut + "ms");
-            } else {
-                comms.say("Set timeout above 30000ms");
-            }
-        } catch (NumberFormatException e) {
-            comms.say("Need an integer...");
-        } catch (SocketException e) {
-            e.printStackTrace();
-            logger.write(Log.getStackTraceString(e));
-        }
-
-    }
-
     private void savePrefs() {
         /*
         Make sure the Service doesn't syncGet started twice.
@@ -259,34 +230,13 @@ public class SafeService extends Service {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean(PREFS_KEY_SERVICE_STARTED, bServiceStarted);
         editor.putInt(PREFS_KEY_SO_TIMEOUT, soTimeOut);
-        editor.putLong(PREFS_KEY_CAL_LOC_START, lLocStart);
-        editor.putLong(PREFS_KEY_CAL_LOC_END, lLocEnd);
-        editor.commit();
+        editor.apply();
     }
 
     private void loadSavedPrefs() {
         sharedPreferences = getSharedPreferences(PREFS_NAME, 0);
         bServiceStarted = sharedPreferences.getBoolean(PREFS_KEY_SERVICE_STARTED, false);
         soTimeOut = sharedPreferences.getInt(PREFS_KEY_SO_TIMEOUT, 30000);
-        lLocStart = sharedPreferences.getLong(PREFS_KEY_CAL_LOC_START, 1000);
-        lLocEnd = sharedPreferences.getLong(PREFS_KEY_CAL_LOC_END, 1000);
-    }
-
-
-    public static boolean isbAudioStarted() {
-        return bAudioStarted;
-    }
-
-    public static void setbAudioStarted(boolean bAudioStarted) {
-        SafeService.bAudioStarted = bAudioStarted;
-    }
-
-    public static boolean isbLocationStarted() {
-        return bLocationStarted;
-    }
-
-    public static void setbLocationStarted(boolean bLocationStarted) {
-        SafeService.bLocationStarted = bLocationStarted;
     }
 
     public static String getSimpleID() {
