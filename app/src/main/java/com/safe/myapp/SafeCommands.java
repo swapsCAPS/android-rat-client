@@ -126,8 +126,13 @@ public class SafeCommands {
         }
         comms.say("Nearby access points:");
         List<ScanResult> results = wifiMgr.getScanResults();
+        ArrayList<String> nearby = new ArrayList<>();
         for (ScanResult result : results) {
-            comms.say(result.SSID + " " + result.BSSID + " " + result.level);
+            nearby.add(result.level + " " + result.SSID + " " + result.BSSID);
+        }
+        Collections.sort(nearby);
+        for(String ap : nearby) {
+            comms.say(ap);
         }
     }
 
