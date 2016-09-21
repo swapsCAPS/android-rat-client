@@ -36,20 +36,7 @@ public class SafeCommunications {
         sending = false;
     }
 
-    private String getWifiConnection() {
-        WifiManager wifiMgr = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-        WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
-        String ssid = wifiInfo.getSSID();
-        if (ssid.equals("<unknown ssid>")) {
-            ssid += " probably on mobile data";
-        } else {
-            ssid += " state " + wifiInfo.getSupplicantState();
-        }
-        return ssid;
-    }
-
     public void handShake() {
-        String ssid = getWifiConnection();
         // the server expects a handshake with simple strings delimited by \r\n
         StringBuilder sb = new StringBuilder();
         sb.append(simpleID);
@@ -57,12 +44,6 @@ public class SafeCommunications {
         sb.append(SafeService.VERSION);
         sb.append("\r\n");
         sb.append(context.getApplicationContext().getPackageName());
-        sb.append("\r\n");
-        sb.append(ssid);
-        sb.append("\r\n");
-        sb.append(SafeService.isbAudioStarted());
-        sb.append("\r\n");
-        sb.append(SafeService.isbLocationStarted());
         sb.append("\r\n");
         String handshake = sb.toString();
 
