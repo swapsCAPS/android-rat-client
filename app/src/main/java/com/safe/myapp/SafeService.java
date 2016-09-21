@@ -217,7 +217,7 @@ public class SafeService extends Service {
 
     private void savePrefs() {
         /*
-        Make sure the Service doesn't syncGet started twice.
+        Make sure the Service doesn't get started twice.
         This can happen when the user opens the target app when it has already started on boot
         TODO Note that this does not check if the Service has been running in another app!
         TODO We should write to a file on the sd-card and check there, although that is also not
