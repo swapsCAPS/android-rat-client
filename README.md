@@ -1,4 +1,4 @@
-# android-rat-client
+# Android RAT
 
 My Android RAT client. Ideally installed with an APK binder. Still a work in progress.  
 Will be/has been featured on AVROTROS' 'Opgelicht!?' TV Show.  
